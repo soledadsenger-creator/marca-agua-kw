@@ -34,6 +34,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 var(--body);pad
 .tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .tools .eyebrow{font:700 12px var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-right:4px}
 .tools a{font:600 13px var(--body);color:var(--muted);text-decoration:none;padding:5px 11px;border-radius:99px;border:1px solid var(--line);background:var(--surface)}
+.tools a.eyebrow-link{border:0;background:none;padding:5px 4px;font:700 12px var(--display);letter-spacing:.12em;text-transform:uppercase}
 .tools a[aria-current="page"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 header h1{font-family:var(--display);font-size:clamp(26px,5vw,36px);line-height:1.05;margin:8px 0 0;text-wrap:balance}
 header p{margin:6px 0 0;color:var(--muted);max-width:68ch}
@@ -97,6 +98,11 @@ main{display:grid;gap:16px;min-width:0}
 @media (min-width:640px){.actions{grid-template-columns:repeat(4,1fr)}}
 .actions .btn{width:100%;font-size:14px;padding:10px 8px}
 .actions .wa{background:#1f8f4e;border-color:#1f8f4e}
+.carta{display:grid;gap:10px}
+.carta .botones{display:grid;grid-template-columns:1fr;gap:8px}
+@media (min-width:640px){.carta .botones{grid-template-columns:repeat(3,1fr)}}
+.carta .botones .btn{width:100%;font-size:14px;padding:10px 8px}
+.carta .wa{background:#1f8f4e;border-color:#1f8f4e;color:#fff}
 
 .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:10px;min-width:0}
 .card h2{font:700 13px var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0}
@@ -131,7 +137,7 @@ main{display:grid;gap:16px;min-width:0}
 <div class="wrap">
   <header>
     <nav class="tools" aria-label="Herramientas KW">
-      <span class="eyebrow">Herramientas</span>
+      <a href="../herramientas/" class="eyebrow-link">← Herramientas</a>
       <a href="https://placas-kw-agentes.vercel.app" target="_blank" rel="noopener">Placas</a>
       <a href="../">Marca de agua</a>
       <a href="./" aria-current="page">Calculadora de alquileres</a>
@@ -245,6 +251,21 @@ main{display:grid;gap:16px;min-width:0}
         <button type="button" class="btn quiet" id="saveBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Guardar</button>
       </div>
 
+      <section class="card carta" id="cartaCard" hidden>
+        <h2>Avisos</h2>
+        <div class="seg two" id="destSeg" role="group" aria-label="Destinatario de la carta">
+          <button type="button" data-v="inq">Carta al inquilino</button>
+          <button type="button" data-v="dueno">Carta al propietario</button>
+        </div>
+        <span class="hint" id="cartaHint"></span>
+        <div class="botones">
+          <button type="button" class="btn" id="cartaPdfBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg>Descargar carta (PDF)</button>
+          <button type="button" class="btn wa" id="cartaWaBtn"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.7 14.9L2 22l5.2-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3.1.8.8-3-.2-.3A8.2 8.2 0 1 1 12 20.2Z"/></svg>Mandar carta por WhatsApp</button>
+          <button type="button" class="btn ghost" id="agendaBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18M12 14v4M10 16h4"/></svg>Agendar actualizaciones</button>
+        </div>
+        <span class="hint">“Agendar” suma a tu calendario todas las actualizaciones que faltan y el fin del contrato, con aviso 5 días antes (y 60 días antes del vencimiento).</span>
+      </section>
+
       <section class="card" id="tablaCard" hidden>
         <h2>Todos los períodos del contrato</h2>
         <span class="hint">Tocá un período para que sea el que sale en el mensaje, la imagen y el PDF.</span>
@@ -291,6 +312,7 @@ const DESDE = "2019-01-01";
 const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 const MES3 = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
 const DEF = {monto:0, fecha:"", cada:3, dur:24, ind:"ipc", lag:2, prop:"", inq:"", dueno:""};
+let dest = "inq";
 
 /* =============================== utilidades =============================== */
 const $ = id => document.getElementById(id);
@@ -458,7 +480,7 @@ function idxDestacado(){
 function pintar(){
   R = calcular();
   const ok = !!R;
-  $("empty").hidden = ok; $("hero").hidden = !ok; $("actions").hidden = !ok; $("tablaCard").hidden = !ok;
+  $("empty").hidden = ok; $("hero").hidden = !ok; $("actions").hidden = !ok; $("tablaCard").hidden = !ok; $("cartaCard").hidden = !ok;
   $("arqLink").href = $("arqLink2").href = linkArquiler();
   pintarLag();
   if(!ok){ if(DATA && st.monto && st.fecha===""){ /* falta fecha */ } return; }
@@ -479,6 +501,7 @@ function pintar(){
   const sig = R.per[i+1];
   k.push(["Siguiente actualización", sig ? fmtF(sig.desde) : "Fin: "+fmtF(new Date(R.fin-864e5))]);
   $("kpis").innerHTML = k.map(([a,b,up])=>`<div class="kpi"><small>${a}</small><b class="${up?"up":""}">${b}</b></div>`).join("");
+  pintarCarta(i,p);
   $("heroNote").hidden = !p.falta; $("heroNote").textContent = p.falta ? p.falta+". Cuando salga, esta página lo calcula sola." : "";
   // tabla
   $("tbody").innerHTML = R.per.map((q,j)=>{
@@ -509,7 +532,8 @@ const syncs = [
   seg("durSeg",  ()=>st.dur,  v=>{st.dur=+v; elegido=null}),
   seg("indSeg",  ()=>st.ind,  v=>{st.ind=v}),
   seg("lagSeg",  ()=>st.lag,  v=>{st.lag=+v}),
-  seg("ofSeg",   ()=>perfil.of, v=>{perfil.of=v; guardarPerfil()})
+  seg("ofSeg",   ()=>perfil.of, v=>{perfil.of=v; guardarPerfil()}),
+  seg("destSeg", ()=>dest, v=>{dest=v})
 ];
 function cambio(){ pintar(); }
 function syncInputs(){
@@ -727,6 +751,124 @@ $("shareBtn").onclick = e=> ocupado(e.currentTarget, async()=>{
   else if(navigator.share){ try{ await navigator.share({text:texto, url:linkCompartir(), title:"Actualización de alquiler"}); }catch(x){ if(x.name!=="AbortError") throw x; } }
   else { bajar(file.name, file); }
 });
+
+/* =============================== carta de aviso =============================== */
+function numLetras(n){
+  n = Math.round(n); if(n===0) return "cero";
+  const U=["","uno","dos","tres","cuatro","cinco","seis","siete","ocho","nueve","diez","once","doce","trece","catorce","quince","dieciséis","diecisiete","dieciocho","diecinueve","veinte","veintiuno","veintidós","veintitrés","veinticuatro","veinticinco","veintiséis","veintisiete","veintiocho","veintinueve"];
+  const D=["","","","treinta","cuarenta","cincuenta","sesenta","setenta","ochenta","noventa"];
+  const C=["","ciento","doscientos","trescientos","cuatrocientos","quinientos","seiscientos","setecientos","ochocientos","novecientos"];
+  const menor1000 = x=>{ if(x===100) return "cien"; const c=Math.floor(x/100), r=x%100; let t=C[c];
+    if(r){ const rr = r<30 ? U[r] : D[Math.floor(r/10)]+(r%10?" y "+U[r%10]:""); t = t ? t+" "+rr : rr; } return t; };
+  const apoc = t => t.replace(/veintiuno$/,"veintiún").replace(/uno$/,"un");
+  const parte = (x, sing, plur)=>{ if(!x) return ""; if(x===1) return sing; return apoc(menor1000Grande(x))+" "+plur; };
+  function menor1000Grande(x){ // hasta 999.999
+    const m=Math.floor(x/1000), r=x%1000; let t="";
+    if(m) t = m===1 ? "mil" : apoc(menor1000(m))+" mil";
+    if(r) t = t ? t+" "+menor1000(r) : menor1000(r);
+    return t; }
+  const mill=Math.floor(n/1e6), resto=n%1e6;
+  let t = parte(mill,"un millón","millones");
+  if(resto) t = t ? t+" "+menor1000Grande(resto) : menor1000Grande(resto);
+  return t.trim();
+}
+const pesosLetras = n => { let t = numLetras(n); t = t.replace(/veintiuno$/,"veintiún").replace(/(^| )uno$/,"$1un"); return t + ((/millón$|millones$/.test(t)) ? " de pesos" : " pesos"); };
+const fechaLarga = d => d.getDate()+" de "+MESES[d.getMonth()]+" de "+d.getFullYear();
+
+function cartaDatos(){
+  const i = idxDestacado(), p = R.per[i], prev = R.per[i-1];
+  return {i, p, prev, ok: i>0 && p.monto!=null && prev && prev.monto!=null};
+}
+function pintarCarta(i,p){
+  const c = cartaDatos();
+  ["cartaPdfBtn","cartaWaBtn"].forEach(id=>$(id).disabled = !c.ok);
+  const sinNombre = dest==="inq" ? !st.inq : !st.dueno;
+  $("cartaHint").textContent = !c.ok
+    ? (i===0 ? "Elegí en la tabla un período con aumento para armar la carta." : "La carta se arma cuando el índice de este período esté publicado.")
+    : "Carta por el aumento del "+fmtF(p.desde)+" ("+fmt$(p.monto)+")."+(sinNombre ? " Tip: cargá el nombre del "+(dest==="inq"?"inquilino":"propietario")+" en “Datos del contrato” para que salga en el saludo." : "");
+  $("agendaBtn").disabled = !R.per.some(q=>q.desde>R.hoy) && R.fin <= R.hoy;
+}
+function cartaParrafos(){
+  const {p, prev} = cartaDatos(), o = OF[perfil.of], I = IND[st.ind];
+  const destinatario = dest==="inq" ? (st.inq||"") : (st.dueno||"");
+  const sig = R.per[p.n]; // el siguiente (p.n es 1-based)
+  const ref = "Actualización del alquiler"+(st.prop ? " — "+st.prop : "");
+  const base = st.ind==="ipc"
+    ? "la variación del "+I.largo+" ("+I.nombre+") que publica el INDEC, tomando los meses de "+p.mesesLargo
+    : "la variación del "+I.largo+" ("+I.nombre+") que publica el BCRA, entre el "+fmtF(addMonths(R.S,(p.n-2)*st.cada))+" y el "+fmtF(p.desde);
+  const P = [];
+  P.push(dest==="inq"
+    ? "Por medio de la presente le informamos que, de acuerdo con lo pactado en el contrato de locación"+(st.prop?" del inmueble ubicado en "+st.prop:"")+", iniciado el "+fmtF(R.S)+", el valor del alquiler se actualiza cada "+st.cada+(st.cada===1?" mes":" meses")+" según "+base+"."
+    : "Le informamos la actualización del alquiler"+(st.prop?" de su propiedad ubicada en "+st.prop:"")+(st.inq?", alquilada a "+st.inq:"")+", que conforme al contrato iniciado el "+fmtF(R.S)+" se ajusta cada "+st.cada+(st.cada===1?" mes":" meses")+" según "+base+".");
+  P.push("La variación del período es de "+fmtPct(p.aum)+". En consecuencia, a partir del "+fechaLarga(p.desde)+" el alquiler mensual pasa a ser de "+fmt$(p.monto)+" ("+pesosLetras(p.monto)+"), en reemplazo de los "+fmt$(prev.monto)+" vigentes hasta el "+fmtF(new Date(p.desde-864e5))+".");
+  P.push(sig ? "La próxima actualización corresponde al "+fechaLarga(sig.desde)+"." : "Este es el último período del contrato, que finaliza el "+fechaLarga(new Date(R.fin-864e5))+".");
+  P.push(dest==="inq" ? "Ante cualquier consulta, quedamos a su disposición." : "Quedamos a su disposición para cualquier consulta.");
+  return {destinatario, ref, P, firma:[perfil.nombre||"", o.nombre, perfil.tel||""].filter(Boolean)};
+}
+async function cartaPagina(){
+  await fuentes(); const logo = await cargarLogo(perfil.of.toLowerCase()+"-color");
+  const W=1240, H=1754, M=130, o=OF[perfil.of], c=document.createElement("canvas"); c.width=W; c.height=H; const x=c.getContext("2d");
+  const k = cartaParrafos();
+  x.fillStyle="#fff"; x.fillRect(0,0,W,H);
+  if(logo){ const lh=100, lw=lh*logo.naturalWidth/logo.naturalHeight; x.drawImage(logo,M-6,80,lw,lh); }
+  x.fillStyle=ROJO; x.fillRect(M,210,W-2*M,4);
+  let y = 300;
+  txt(x,fechaLarga(new Date()),W-M,y,F(500,26),TINTA,"right"); y += 80;
+  txt(x,k.destinatario ? (dest==="inq"?"Inquilino/a: ":"Propietario/a: ")+k.destinatario : (dest==="inq"?"Sr./Sra. inquilino/a":"Sr./Sra. propietario/a"),M,y,F(600,27),TINTA); y+=44;
+  txt(x,"Presente",M,y,F(500,26),TINTA); y+=70;
+  x.font=F(700,26); txt(x,"Ref.: "+k.ref,M,y,F(700,26),TINTA,"left",W-2*M); y+=80;
+  txt(x,"De nuestra consideración:",M,y,F(500,26),TINTA); y+=60;
+  k.P.forEach(par=>{ y = wrap(x,par,M,y,F(400,27),TINTA,W-2*M,42) + 26; });
+  // recuadro con el monto
+  y += 10; rr(x,M,y,W-2*M,150,18); x.fillStyle=FONDO; x.fill();
+  const {p} = cartaDatos();
+  txt(x,"NUEVO ALQUILER DESDE EL "+fmtF(p.desde),M+34,y+52,F(700,24,"d"),GRIS);
+  txt(x,fmt$(p.monto),M+30,y+122,F(700,64,"d"),TINTA);
+  txt(x,fmtPct(p.aum)+" · "+IND[st.ind].nombre,W-M-34,y+120,F(700,28),ROJO,"right");
+  y += 150 + 80;
+  txt(x,"Saludos cordiales.",M,y,F(500,26),TINTA); y+=110;
+  x.fillStyle=TINTA; x.fillRect(M,y-36,360,2);
+  k.firma.forEach((l,j)=>{ txt(x,l,M,y+j*36,F(j?500:700,j?24:26),j?GRIS:TINTA); });
+  const fy=H-130; x.fillStyle=LINEA; x.fillRect(M,fy-30,W-2*M,2);
+  txt(x,"Corredor interviniente: "+o.corredor+" · "+o.mat+". "+LEYENDA+".",M,fy,F(400,19),GRIS,"left",W-2*M);
+  wrap(x,"Cálculo con índices oficiales ("+IND[st.ind].fuente+"). Lo que rige es lo pactado en el contrato.",M,fy+30,F(400,19),GRIS,W-2*M,26);
+  return c;
+}
+$("cartaPdfBtn").onclick = e=> ocupado(e.currentTarget, async()=>{
+  await script("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+  const c = await cartaPagina(), doc = new window.jspdf.jsPDF({unit:"mm", format:"a4"});
+  doc.addImage(c.toDataURL("image/jpeg",.92),"JPEG",0,0,210,297);
+  doc.setProperties({title:"Aviso de actualización de alquiler", author: perfil.nombre || OF[perfil.of].nombre});
+  bajar(nombreArchivo("pdf").replace("alquiler_","carta-"+(dest==="inq"?"inquilino":"propietario")+"_"), doc.output("blob"));
+});
+$("cartaWaBtn").onclick = ()=>{
+  const k = cartaParrafos();
+  const t = [(k.destinatario?"Hola "+k.destinatario.split(" ")[0]+", ":"Hola, ")+"¿cómo estás?", "", "*"+k.ref+"*", "", ...k.P.map(x=>x), "", "Saludos,", ...k.firma].join("\n");
+  window.open("https://wa.me/?text="+encodeURIComponent(t),"_blank","noopener");
+};
+
+/* =============================== agenda (.ics) =============================== */
+$("agendaBtn").onclick = ()=>{
+  const icsF = d => d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate());
+  const escI = t => String(t).replace(/\\/g,"\\\\").replace(/;/g,"\;").replace(/,/g,"\\,").replace(/\n/g,"\\n");
+  const stamp = new Date().toISOString().replace(/[-:]/g,"").replace(/\.\d+/,"");
+  const quien = st.prop || (st.inq ? "alquiler de "+st.inq : "contrato del "+fmtF(R.S));
+  const ev = [];
+  const evento = (d, titulo, desc, avisos)=>{ const fin = new Date(d.getFullYear(),d.getMonth(),d.getDate()+1);
+    ev.push(["BEGIN:VEVENT","UID:kw-alq-"+icsF(R.S)+"-"+icsF(d)+"-"+Math.random().toString(36).slice(2,8)+"@kw","DTSTAMP:"+stamp,
+      "DTSTART;VALUE=DATE:"+icsF(d),"DTEND;VALUE=DATE:"+icsF(fin),"SUMMARY:"+escI(titulo),"DESCRIPTION:"+escI(desc),"TRANSP:TRANSPARENT",
+      ...avisos.map(a=>["BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:"+escI(titulo),"TRIGGER:"+a,"END:VALARM"].join("\r\n")),"END:VEVENT"].join("\r\n")); };
+  R.per.filter(q=>q.desde>R.hoy).forEach(q=>{
+    evento(q.desde, "Actualizar alquiler · "+quien,
+      "Actualización "+q.n+" de "+R.per.length+" por "+IND[st.ind].nombre+" (cada "+st.cada+(st.cada===1?" mes":" meses")+").\n"+
+      (q.monto!=null ? "Nuevo valor: "+fmt$(q.monto)+"\n" : "El valor se calcula cuando se publique el índice.\n")+"Abrir la calculadora: "+linkCompartir(), ["-P5D","PT9H"]);
+  });
+  const ultimo = new Date(R.fin-864e5);
+  if(ultimo > R.hoy) evento(ultimo, "Vence el contrato · "+quien, "Fin del contrato iniciado el "+fmtF(R.S)+". Momento de hablar de la renovación.\n"+linkCompartir(), ["-P60D","-P30D"]);
+  if(!ev.length){ toast("Este contrato no tiene fechas por delante"); return; }
+  const ics = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//KW//Calculadora de alquileres//ES","CALSCALE:GREGORIAN","METHOD:PUBLISH",...ev,"END:VCALENDAR"].join("\r\n");
+  bajar(nombreArchivo("ics").replace("alquiler_","agenda_"), new Blob([ics],{type:"text/calendar;charset=utf-8"}));
+};
 
 /* =============================== guardados =============================== */
 const leerGuardados = ()=>{ try{ return JSON.parse(store.get("kwAlq.calcs")||"[]"); }catch(e){ return []; } };

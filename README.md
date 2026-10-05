@@ -1,5 +1,7 @@
 # Herramientas KW
 
+Portada con todas las herramientas: https://soledadsenger-creator.github.io/marca-agua-kw/herramientas/
+
 Herramientas para los asesores de KW ON, KW Parque Leloir y KW City. Cada cambio que se sube a `main` se publica solo.
 
 ## Marca de agua — `index.html`
@@ -10,7 +12,7 @@ Link: https://soledadsenger-creator.github.io/marca-agua-kw/
 
 ## Calculadora de alquileres — `alquileres/`
 
-Actualización de alquileres por ICL, IPC, CER o UVA con los índices oficiales. Muestra todos los períodos del contrato y exporta a WhatsApp, imagen, PDF y Excel; guarda cálculos en el dispositivo y arma un link para reabrir el mismo cálculo.
+Actualización de alquileres por ICL, IPC, CER o UVA con los índices oficiales. Muestra todos los períodos del contrato y exporta a WhatsApp, imagen, PDF y Excel; arma la carta de aviso al inquilino o al propietario y un archivo de calendario con las próximas actualizaciones; guarda cálculos en el dispositivo y arma un link para reabrir el mismo cálculo.
 
 Link: https://soledadsenger-creator.github.io/marca-agua-kw/alquileres/
 
