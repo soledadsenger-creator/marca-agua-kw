@@ -1,0 +1,764 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#b40f1e">
+<meta name="description" content="Calculadora de actualización de alquileres por ICL, IPC, CER y UVA con datos oficiales del BCRA y el INDEC.">
+<link rel="icon" href="../icon.png">
+<link rel="apple-touch-icon" href="../icon.png">
+<title>Calculadora de Alquileres KW</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#f6f4f3; --surface:#ffffff; --line:#e3dedc; --fg:#1d1a19; --muted:#6c6462;
+  --accent:#b40f1e; --accent-ink:#ffffff; --accent-soft:#f7e3e5;
+  --ok:#1e7a46; --ok-soft:#e7f1e9; --warn:#9c5700; --warn-soft:#fff3d6;
+  --display:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#161314; --surface:#211d1e; --line:#3a3335; --fg:#f2eeed; --muted:#a99f9d;
+  --accent:#e2384a; --accent-ink:#ffffff; --accent-soft:#3a1d21;
+  --ok:#6fcf97; --ok-soft:#173226; --warn:#f2b45a; --warn-soft:#3a2c14; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#161314; --surface:#211d1e; --line:#3a3335; --fg:#f2eeed; --muted:#a99f9d;
+  --accent:#e2384a; --accent-ink:#ffffff; --accent-soft:#3a1d21;
+  --ok:#6fcf97; --ok-soft:#173226; --warn:#f2b45a; --warn-soft:#3a2c14; color-scheme:dark}
+*{box-sizing:border-box}
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 var(--body);padding-inline:16px;padding-block:20px 48px}
+.wrap{max-width:1240px;margin:0 auto;display:grid;gap:20px}
+.tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tools .eyebrow{font:700 12px var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-right:4px}
+.tools a{font:600 13px var(--body);color:var(--muted);text-decoration:none;padding:5px 11px;border-radius:99px;border:1px solid var(--line);background:var(--surface)}
+.tools a[aria-current="page"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+header h1{font-family:var(--display);font-size:clamp(26px,5vw,36px);line-height:1.05;margin:8px 0 0;text-wrap:balance}
+header p{margin:6px 0 0;color:var(--muted);max-width:68ch}
+.layout{display:grid;gap:20px;grid-template-columns:1fr}
+@media (min-width:960px){.layout{grid-template-columns:340px 1fr;align-items:start}.panel{position:sticky;top:16px}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:16px;min-width:0}
+.step{display:grid;gap:8px;min-width:0}
+.label{font-family:var(--display);font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.seg.two{grid-template-columns:repeat(2,1fr)}
+.seg.four{grid-template-columns:repeat(4,1fr)}
+.seg button{font:600 14px var(--body);padding:10px 4px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer;line-height:1.2}
+.seg button small{display:block;font-weight:500;font-size:11px;color:var(--muted);margin-top:2px}
+.seg button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.seg button[aria-pressed="true"] small{color:rgba(255,255,255,.85)}
+button:focus-visible,input:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=text],input[type=date],input[type=tel]{width:100%;font:500 16px var(--body);padding:11px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);min-width:0}
+.money{position:relative}
+.money span{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-weight:600}
+.money input{padding-left:28px;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.hint{font-size:13px;color:var(--muted);line-height:1.45}
+.hint a{color:var(--accent)}
+hr{border:0;border-top:1px solid var(--line);margin:2px 0;width:100%}
+details{border-top:1px solid var(--line);padding-top:12px}
+details>summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center}
+details>summary::-webkit-details-marker{display:none}
+details>summary::after{content:"+";font:600 20px var(--body);color:var(--muted)}
+details[open]>summary::after{content:"–"}
+details .step{margin-top:10px}
+.field{display:grid;gap:4px}
+.field label{font-size:13px;color:var(--muted)}
+.btn{font:600 15px var(--body);padding:11px 16px;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;line-height:1.2}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.quiet{background:var(--surface);border-color:var(--line);color:var(--fg)}
+.btn.small{font-size:13px;padding:7px 12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn svg{width:18px;height:18px;flex:none}
+
+main{display:grid;gap:16px;min-width:0}
+.status{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:13px;color:var(--muted)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block;margin-right:6px;vertical-align:1px}
+.dot.ok{background:var(--ok)} .dot.warn{background:var(--warn)}
+.hero{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-width:0}
+.hero .top{background:var(--accent);color:var(--accent-ink);padding:14px 18px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
+.hero .top b{font:700 13px var(--display);letter-spacing:.12em;text-transform:uppercase}
+.hero .top span{font-size:13px;opacity:.92}
+.hero .body{padding:18px;display:grid;gap:14px}
+.big{font:700 clamp(38px,8vw,58px)/1 var(--display);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.big.pend{font-size:clamp(24px,5vw,32px);color:var(--warn)}
+.sub{color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kpi{background:var(--bg);border-radius:10px;padding:10px 12px;min-width:0}
+.kpi small{display:block;font:700 11px var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.kpi b{font:700 20px var(--display);font-variant-numeric:tabular-nums}
+.kpi .up{color:var(--accent)}
+.note{background:var(--warn-soft);color:var(--warn);border-radius:10px;padding:10px 12px;font-size:14px}
+.empty{background:var(--surface);border:2px dashed var(--line);border-radius:12px;padding:28px 18px;text-align:center;color:var(--muted)}
+.empty strong{display:block;font:700 22px var(--display);color:var(--fg);margin-bottom:4px}
+
+.actions{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+@media (min-width:640px){.actions{grid-template-columns:repeat(4,1fr)}}
+.actions .btn{width:100%;font-size:14px;padding:10px 8px}
+.actions .wa{background:#1f8f4e;border-color:#1f8f4e}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:10px;min-width:0}
+.card h2{font:700 13px var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0}
+.tbl{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px}
+.tbl th{text-align:left;font:700 11px var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line)}
+.tbl td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:last-child td{border-bottom:0}
+.tbl td.r,.tbl th.r{text-align:right}
+.tbl tbody tr{cursor:pointer}
+.tbl tbody tr:hover td{background:var(--bg)}
+.tbl tbody tr.on td{background:var(--accent-soft)}
+.tbl .amt{font-weight:700}
+.tbl .muted{color:var(--muted);font-size:12.5px}
+.pill{font:700 10.5px var(--display);letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:99px;white-space:nowrap;display:inline-block}
+.pill.vig{background:var(--accent);color:#fff}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.pend{background:var(--warn-soft);color:var(--warn)}
+.pill.fut{background:var(--bg);color:var(--muted)}
+@media (max-width:560px){ .tbl .hide-s{display:none} .tbl td,.tbl th{padding:8px 5px} }
+.saved{display:grid;gap:8px}
+.saved .it{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--bg);border-radius:10px;padding:10px 12px;min-width:0}
+.saved .it div{min-width:0}
+.saved .it b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.saved .it span{font-size:12.5px;color:var(--muted)}
+.saved .it .row{display:flex;gap:4px;flex:none}
+.foot{font-size:12.5px;color:var(--muted);line-height:1.6}
+.foot a{color:var(--accent)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px;max-width:calc(100% - 32px);z-index:9}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <nav class="tools" aria-label="Herramientas KW">
+      <span class="eyebrow">Herramientas</span>
+      <a href="https://placas-kw-agentes.vercel.app" target="_blank" rel="noopener">Placas</a>
+      <a href="../">Marca de agua</a>
+      <a href="./" aria-current="page">Calculadora de alquileres</a>
+    </nav>
+    <h1>Calculadora de alquileres</h1>
+    <p>Cargá el contrato y te da el valor actualizado de cada período con los índices oficiales del BCRA y el INDEC. Después lo mandás por WhatsApp, lo descargás en imagen, PDF o Excel, o lo guardás para la próxima.</p>
+  </header>
+
+  <div class="layout">
+    <aside class="panel" aria-label="Datos del contrato">
+      <div class="step">
+        <label class="label" for="monto">Alquiler inicial</label>
+        <div class="money"><span>$</span><input type="text" id="monto" inputmode="numeric" autocomplete="off" placeholder="500.000"></div>
+      </div>
+      <div class="step">
+        <label class="label" for="fecha">Inicio del contrato</label>
+        <input type="date" id="fecha">
+      </div>
+      <div class="step">
+        <span class="label">Actualiza cada</span>
+        <div class="seg" id="cadaSeg" role="group" aria-label="Actualiza cada">
+          <button type="button" data-v="1">1 mes</button>
+          <button type="button" data-v="2">2 meses</button>
+          <button type="button" data-v="3">3 meses</button>
+          <button type="button" data-v="4">4 meses</button>
+          <button type="button" data-v="6">6 meses</button>
+          <button type="button" data-v="12">12 meses</button>
+        </div>
+      </div>
+      <div class="step">
+        <span class="label">Duración</span>
+        <div class="seg" id="durSeg" role="group" aria-label="Duración del contrato">
+          <button type="button" data-v="12">1 año</button>
+          <button type="button" data-v="24">2 años</button>
+          <button type="button" data-v="36">3 años</button>
+        </div>
+      </div>
+      <div class="step">
+        <span class="label">Índice</span>
+        <div class="seg four" id="indSeg" role="group" aria-label="Índice de actualización">
+          <button type="button" data-v="ipc">IPC<small>INDEC</small></button>
+          <button type="button" data-v="icl">ICL<small>BCRA</small></button>
+          <button type="button" data-v="cer">CER<small>BCRA</small></button>
+          <button type="button" data-v="uva">UVA<small>BCRA</small></button>
+        </div>
+        <div class="step" id="ipcModo">
+          <div class="seg two" id="lagSeg" role="group" aria-label="Qué meses de IPC toma">
+            <button type="button" data-v="2">Último publicado</button>
+            <button type="button" data-v="1">Meses del período</button>
+          </div>
+          <span class="hint" id="lagHint"></span>
+        </div>
+        <span class="hint">¿Casa Propia, CAC, IS o IPIM? <a href="#" id="arqLink" target="_blank" rel="noopener">Calculalo en ARquiler</a> con estos mismos datos.</span>
+      </div>
+
+      <details id="detProp">
+        <summary><span class="label">Datos del contrato (opcional)</span></summary>
+        <div class="step">
+          <div class="field"><label for="prop">Propiedad</label><input type="text" id="prop" placeholder="Av. Rivadavia 1234, Ituzaingó"></div>
+          <div class="field"><label for="inq">Inquilino/a</label><input type="text" id="inq"></div>
+          <div class="field"><label for="dueno">Propietario/a</label><input type="text" id="dueno"></div>
+          <span class="hint">Salen en el informe y en el mensaje. No se guardan en ningún servidor.</span>
+        </div>
+      </details>
+
+      <details id="detYo">
+        <summary><span class="label">Tus datos y oficina</span></summary>
+        <div class="step">
+          <div class="seg" id="ofSeg" role="group" aria-label="Oficina">
+            <button type="button" data-v="LELOIR">Leloir</button>
+            <button type="button" data-v="ON">KW ON</button>
+            <button type="button" data-v="CITY">City</button>
+          </div>
+          <div class="field"><label for="agNombre">Tu nombre</label><input type="text" id="agNombre" autocomplete="name"></div>
+          <div class="field"><label for="agTel">Tu WhatsApp</label><input type="tel" id="agTel" autocomplete="tel" placeholder="11 1234-5678"></div>
+          <span class="hint">Se guardan en este teléfono y aparecen al pie de la imagen y del PDF.</span>
+        </div>
+      </details>
+      <button type="button" class="btn ghost small" id="nuevoBtn">Empezar un cálculo nuevo</button>
+    </aside>
+
+    <main>
+      <div class="status" id="status"><span><span class="dot"></span>Cargando índices oficiales…</span></div>
+
+      <div class="empty" id="empty">
+        <strong>Cargá el alquiler inicial y la fecha</strong>
+        El resto ya viene elegido: lo podés cambiar cuando quieras.
+      </div>
+
+      <section class="hero" id="hero" hidden aria-live="polite">
+        <div class="top"><b id="heroTag">Alquiler vigente</b><span id="heroIdx"></span></div>
+        <div class="body">
+          <div>
+            <div class="sub" id="heroDesde"></div>
+            <div class="big" id="heroMonto"></div>
+            <div class="sub" id="heroMeses"></div>
+          </div>
+          <div class="kpis" id="kpis"></div>
+          <div class="note" id="heroNote" hidden></div>
+        </div>
+      </section>
+
+      <div class="actions" id="actions" hidden>
+        <button type="button" class="btn wa" id="waBtn"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.7 14.9L2 22l5.2-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3.1.8.8-3-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3a.5.5 0 0 0 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.2c0-.1-.2-.2-.4-.3Z"/></svg>WhatsApp</button>
+        <button type="button" class="btn" id="imgBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>Imagen</button>
+        <button type="button" class="btn" id="pdfBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>PDF</button>
+        <button type="button" class="btn" id="xlsBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>Excel</button>
+        <button type="button" class="btn quiet" id="copyBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>Copiar texto</button>
+        <button type="button" class="btn quiet" id="linkBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>Copiar link</button>
+        <button type="button" class="btn quiet" id="shareBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>Compartir</button>
+        <button type="button" class="btn quiet" id="saveBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Guardar</button>
+      </div>
+
+      <section class="card" id="tablaCard" hidden>
+        <h2>Todos los períodos del contrato</h2>
+        <span class="hint">Tocá un período para que sea el que sale en el mensaje, la imagen y el PDF.</span>
+        <div style="overflow-x:auto">
+          <table class="tbl">
+            <thead><tr><th>#</th><th>Desde</th><th class="r">Alquiler</th><th class="r">Aumento</th><th class="r hide-s">Acumulado</th><th class="hide-s">Estado</th></tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card" id="savedCard" hidden>
+        <h2>Mis cálculos guardados</h2>
+        <div class="saved" id="saved"></div>
+        <span class="hint">Quedan guardados en este teléfono o compu. Para tenerlos en otro lado, usá “Copiar link”.</span>
+      </section>
+
+      <p class="foot" id="foot">
+        Índices oficiales: ICL, CER y UVA del <a href="https://www.bcra.gob.ar/PublicacionesEstadisticas/Principales_variables.asp" target="_blank" rel="noopener">BCRA</a>; IPC nivel general del <a href="https://www.indec.gob.ar/indec/web/Nivel4-Tema-3-5-31" target="_blank" rel="noopener">INDEC</a>.
+        El ICL, el CER y la UVA se comparan día contra día (fecha de la actualización anterior contra la de esta). El IPC acumula la variación mensual de los meses que se indican.
+        Es una herramienta orientativa: lo que manda es lo que dice cada contrato. Para cruzar el resultado, <a href="#" id="arqLink2" target="_blank" rel="noopener">abrilo en ARquiler</a>.
+      </p>
+    </main>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/* =============================== datos fijos =============================== */
+const OF = {
+  LELOIR: {nombre:"KW Parque Leloir", corredor:"Julian Aguilar Amat", mat:"CMCPSI 6737 // CUCICBA 7839"},
+  ON:     {nombre:"KW ON",            corredor:"Julian Aguilar Amat", mat:"CMCPSI 6737 // CUCICBA 7839"},
+  CITY:   {nombre:"KW City",          corredor:"Juan Eloy Gramajo",   mat:"CMCPSI 6760 / CUCICBA 9368"}
+};
+const LEYENDA = "Cada oficina opera de forma independiente";
+const IND = {
+  ipc:{nombre:"IPC", largo:"Índice de Precios al Consumidor", fuente:"INDEC", mensual:true},
+  icl:{nombre:"ICL", largo:"Índice para Contratos de Locación", fuente:"BCRA", bcra:40},
+  cer:{nombre:"CER", largo:"Coeficiente de Estabilización de Referencia", fuente:"BCRA", bcra:30},
+  uva:{nombre:"UVA", largo:"Unidad de Valor Adquisitivo", fuente:"BCRA", bcra:31}
+};
+const IPC_SERIE = "148.3_INIVELNAL_DICI_M_26";
+const DESDE = "2019-01-01";
+const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const MES3 = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+const DEF = {monto:0, fecha:"", cada:3, dur:24, ind:"ipc", lag:2, prop:"", inq:"", dueno:""};
+
+/* =============================== utilidades =============================== */
+const $ = id => document.getElementById(id);
+const store = {get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const fmt$ = n => "$ " + Math.round(n).toLocaleString("es-AR");
+const fmtPct = n => (n>=0?"+":"") + n.toLocaleString("es-AR",{minimumFractionDigits:2,maximumFractionDigits:2}) + " %";
+const pad = n => String(n).padStart(2,"0");
+const iso = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const ymOf = d => d.getFullYear()+"-"+pad(d.getMonth()+1);
+const parseISO = s => { const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d||1); };
+const fmtF = d => pad(d.getDate())+"/"+pad(d.getMonth()+1)+"/"+d.getFullYear();
+const mesLargo = ym => { const [y,m]=ym.split("-").map(Number); return MESES[m-1]+" "+y; };
+const mesCorto = ym => { const [y,m]=ym.split("-").map(Number); return MES3[m-1]+"-"+String(y).slice(2); };
+function addMonths(d,k){ const y=d.getFullYear(), m=d.getMonth()+k, day=d.getDate(); const last=new Date(y,m+1,0).getDate(); return new Date(y,m,Math.min(day,last)); }
+function shiftYM(ym,k){ const [y,m]=ym.split("-").map(Number); const d=new Date(y,m-1+k,1); return ymOf(d); }
+function toast(m){ const t=$("toast"); t.textContent=m; t.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>t.hidden=true,2800); }
+const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* =============================== estado =============================== */
+let st = Object.assign({}, DEF);
+let perfil = {of:"LELOIR", nombre:"", tel:""};
+try{ Object.assign(perfil, JSON.parse(store.get("kwAlq.perfil")||"{}")); }catch(e){}
+let elegido = null;          // índice de período elegido a mano
+let R = null;                // último resultado calculado
+let DATA = null;             // {icl:{iso:val}, cer, uva, ipc:{ym:val}, fuente, ...}
+
+function leerURL(){
+  const q = new URLSearchParams(location.search);
+  if(!q.has("m") && !q.has("f")) return false;
+  const n = +String(q.get("m")||"").replace(/\D/g,""); if(n) st.monto=n;
+  const f = q.get("f"); if(/^\d{4}-\d{2}-\d{2}$/.test(f||"")) st.fecha=f;
+  const c = +q.get("c"); if([1,2,3,4,6,12].includes(c)) st.cada=c;
+  const d = +q.get("d"); if([12,24,36].includes(d)) st.dur=d;
+  const i = q.get("i"); if(IND[i]) st.ind=i;
+  const l = +q.get("l"); if([1,2].includes(l)) st.lag=l;
+  ["prop","inq","dueno"].forEach(k=>{ if(q.get(k)) st[k]=q.get(k); });
+  if(q.has("p")) elegido = +q.get("p");
+  return true;
+}
+function paramsURL(){
+  const q = new URLSearchParams({m:st.monto, f:st.fecha, c:st.cada, d:st.dur, i:st.ind});
+  if(st.ind==="ipc") q.set("l",st.lag);
+  ["prop","inq","dueno"].forEach(k=>{ if(st[k]) q.set(k,st[k]); });
+  if(elegido!=null) q.set("p",elegido);
+  return q;
+}
+function linkCompartir(){ return location.origin + location.pathname + "?" + paramsURL().toString(); }
+function linkArquiler(){
+  const q = new URLSearchParams({months:st.cada, rate:st.ind});
+  if(st.monto) q.set("amount",st.monto); if(st.fecha) q.set("date",st.fecha);
+  return "https://arquiler.com/?"+q.toString();
+}
+
+/* =============================== índices =============================== */
+async function getJSON(url, ms){
+  const ctl = new AbortController(), t = setTimeout(()=>ctl.abort(), ms||12000);
+  try{ const r = await fetch(url,{signal:ctl.signal}); if(!r.ok) throw new Error(r.status); return await r.json(); }
+  finally{ clearTimeout(t); }
+}
+async function bcraSerie(id){
+  const hasta = iso(addMonths(new Date(),12)), out = {}; let offset = 0;
+  for(let i=0;i<6;i++){
+    const d = await getJSON(`https://api.bcra.gob.ar/estadisticas/v4.0/monetarias/${id}?desde=${DESDE}&hasta=${hasta}&limit=3000&offset=${offset}`);
+    const filas = (d.results && d.results[0] && d.results[0].detalle) || [];
+    filas.forEach(f=>{ out[f.fecha]=f.valor; });
+    offset += filas.length;
+    if(!filas.length || offset >= d.metadata.resultset.count) break;
+  }
+  if(Object.keys(out).length < 30) throw new Error("pocos datos");
+  return out;
+}
+async function ipcSerie(){
+  const d = await getJSON(`https://apis.datos.gob.ar/series/api/series/?ids=${IPC_SERIE}&start_date=${DESDE}&limit=1000&format=json`);
+  const out = {}; d.data.forEach(f=>{ if(f[1]!=null) out[f[0].slice(0,7)] = f[1]; });
+  if(Object.keys(out).length < 12) throw new Error("pocos datos");
+  return out;
+}
+async function cargarIndices(){
+  const vivo = await Promise.allSettled([bcraSerie(40), bcraSerie(30), bcraSerie(31), ipcSerie()]);
+  const keys = ["icl","cer","uva","ipc"], D = {vivo:{}};
+  let respaldo = null;
+  for(let i=0;i<keys.length;i++){
+    if(vivo[i].status==="fulfilled"){ D[keys[i]] = vivo[i].value; D.vivo[keys[i]] = true; }
+    else{
+      if(!respaldo){ try{ respaldo = await getJSON("indices.json?"+Date.now(), 15000); }catch(e){ respaldo = {}; } }
+      D[keys[i]] = respaldo[keys[i]] || {}; D.vivo[keys[i]] = false;
+      D.respaldoFecha = respaldo.actualizado;
+    }
+  }
+  keys.forEach(k=>{ const ks=Object.keys(D[k]).sort(); D[k+"_ult"] = ks[ks.length-1]; D[k+"_keys"]=ks; });
+  if(keys.some(k=>!D[k+"_keys"].length)) throw new Error("sin índices");
+  return D;
+}
+function valorDia(k, fechaISO){
+  const s = DATA[k]; if(s[fechaISO]!=null) return s[fechaISO];
+  if(!DATA[k+"_ult"] || fechaISO > DATA[k+"_ult"]) return null;
+  // por las dudas falte un día: el último dato anterior
+  const ks = DATA[k+"_keys"]; let lo=0, hi=ks.length-1, ans=null;
+  while(lo<=hi){ const mid=(lo+hi)>>1; if(ks[mid]<=fechaISO){ ans=ks[mid]; lo=mid+1; } else hi=mid-1; }
+  return ans ? s[ans] : null;
+}
+function pintarStatus(){
+  if(!DATA){ $("status").innerHTML='<span><span class="dot warn"></span>No se pudieron cargar los índices. Revisá la conexión y recargá la página.</span>'; return; }
+  const todoVivo = Object.values(DATA.vivo).every(Boolean);
+  const partes = [
+    `ICL al ${fmtF(parseISO(DATA.icl_ult))}`,
+    `IPC hasta ${mesLargo(DATA.ipc_ult)}`,
+    `CER y UVA al ${fmtF(parseISO(DATA.cer_ult))}`
+  ];
+  $("status").innerHTML = `<span><span class="dot ${todoVivo?"ok":"warn"}"></span>${todoVivo?"Índices oficiales al día":"Índices de respaldo"+(DATA.respaldoFecha?" (copia del "+fmtF(new Date(DATA.respaldoFecha))+")":"")}</span>` +
+    partes.map(p=>`<span>${p}</span>`).join("");
+}
+
+/* =============================== cálculo =============================== */
+function calcular(){
+  if(!DATA || !st.monto || !st.fecha) return null;
+  const S = parseISO(st.fecha), hoy = new Date(); hoy.setHours(0,0,0,0);
+  const fin = addMonths(S, st.dur), per = [];
+  for(let k=0; ; k++){
+    const desde = addMonths(S, k*st.cada); if(desde >= fin) break;
+    const hasta = new Date(Math.min(addMonths(S,(k+1)*st.cada), fin) - 864e5);
+    const p = {n:k+1, desde, hasta, monto:null, ratio:null, falta:"", meses:""};
+    if(k===0){ p.monto = st.monto; p.ratio = 1; }
+    else if(st.ind==="ipc"){
+      const base = shiftYM(ymOf(S), -st.lag), ult = shiftYM(ymOf(desde), -st.lag);
+      // meses de este período (la cuenta igual se hace contra el inicio: da lo mismo y no arrastra redondeos)
+      const ini = shiftYM(shiftYM(ymOf(addMonths(S,(k-1)*st.cada)), -st.lag), 1);
+      p.meses = ini===ult ? mesCorto(ult) : mesCorto(ini) + " a " + mesCorto(ult);
+      p.mesesLargo = ini===ult ? mesLargo(ult) : mesLargo(ini) + " a " + mesLargo(ult);
+      const a = DATA.ipc[base], b = DATA.ipc[ult];
+      if(a==null) p.falta = "No hay IPC de "+mesLargo(base)+" (la serie arranca en "+mesLargo(DATA.ipc_keys[0])+")";
+      else if(b==null) p.falta = "Falta que el INDEC publique el IPC de "+mesLargo(ult)+" (sale a mediados de "+MESES[+shiftYM(ult,1).slice(5)-1]+")";
+      else p.ratio = b/a;
+    } else {
+      const a = valorDia(st.ind, iso(S)), b = valorDia(st.ind, iso(desde));
+      const ant = addMonths(S,(k-1)*st.cada);
+      p.meses = fmtF(ant)+" → "+fmtF(desde);
+      p.mesesLargo = IND[st.ind].nombre+" del "+fmtF(ant)+" contra el del "+fmtF(desde);
+      if(a==null) p.falta = "No hay "+IND[st.ind].nombre+" para el "+fmtF(S);
+      else if(b==null) p.falta = "Falta que el BCRA publique el "+IND[st.ind].nombre+" del "+fmtF(desde);
+      else p.ratio = b/a;
+    }
+    if(p.ratio!=null) p.monto = Math.round(st.monto * p.ratio);
+    p.estado = desde > hoy ? "fut" : "pas";
+    per.push(p);
+  }
+  // aumento contra el período anterior
+  per.forEach((p,i)=>{ const prev = per[i-1]; p.aum = (i && p.monto!=null && prev && prev.monto!=null) ? (p.monto/prev.monto-1)*100 : null; p.acum = p.monto!=null ? (p.monto/st.monto-1)*100 : null; });
+  let vig = -1; per.forEach((p,i)=>{ if(p.desde<=hoy) vig=i; });
+  const prox = per.findIndex(p=>p.desde>hoy);
+  return {per, vig, prox, S, fin, hoy};
+}
+function idxDestacado(){
+  if(!R) return -1;
+  if(elegido!=null && R.per[elegido-1]) return elegido-1;
+  if(R.vig>=0){
+    // si el vigente es el primero (todavía no hubo aumento), mostrar la próxima actualización
+    if(R.vig===0 && R.prox>0) return R.prox;
+    return R.vig;
+  }
+  return 0;
+}
+
+/* =============================== pintar =============================== */
+function pintar(){
+  R = calcular();
+  const ok = !!R;
+  $("empty").hidden = ok; $("hero").hidden = !ok; $("actions").hidden = !ok; $("tablaCard").hidden = !ok;
+  $("arqLink").href = $("arqLink2").href = linkArquiler();
+  pintarLag();
+  if(!ok){ if(DATA && st.monto && st.fecha===""){ /* falta fecha */ } return; }
+  const i = idxDestacado(), p = R.per[i], prev = R.per[i-1];
+  const esVig = i===R.vig, esFut = p.desde > R.hoy;
+  $("heroTag").textContent = i===0 ? "Alquiler inicial" : esVig ? "Alquiler vigente" : esFut ? "Próxima actualización" : "Período "+p.n;
+  $("heroIdx").textContent = IND[st.ind].nombre+" · cada "+st.cada+(st.cada===1?" mes":" meses")+" · período "+p.n+" de "+R.per.length;
+  $("heroDesde").textContent = "Desde el "+fmtF(p.desde)+" hasta el "+fmtF(p.hasta);
+  if(p.monto!=null){
+    $("heroMonto").textContent = fmt$(p.monto); $("heroMonto").className="big";
+  } else { $("heroMonto").textContent = "Todavía no se puede calcular"; $("heroMonto").className="big pend"; }
+  $("heroMeses").textContent = i===0 ? "Valor de arranque del contrato" : (st.ind==="ipc" ? "IPC de "+p.mesesLargo : p.mesesLargo);
+  const k = [];
+  if(i>0) k.push(["Aumento", p.aum!=null ? fmtPct(p.aum) : "—", true]);
+  if(i>0) k.push(["Antes pagaba", prev && prev.monto!=null ? fmt$(prev.monto) : "—"]);
+  if(i>0) k.push(["Diferencia por mes", (p.monto!=null && prev && prev.monto!=null) ? fmt$(p.monto-prev.monto) : "—"]);
+  k.push(["Acumulado desde el inicio", p.acum!=null ? fmtPct(p.acum) : "—"]);
+  const sig = R.per[i+1];
+  k.push(["Siguiente actualización", sig ? fmtF(sig.desde) : "Fin: "+fmtF(new Date(R.fin-864e5))]);
+  $("kpis").innerHTML = k.map(([a,b,up])=>`<div class="kpi"><small>${a}</small><b class="${up?"up":""}">${b}</b></div>`).join("");
+  $("heroNote").hidden = !p.falta; $("heroNote").textContent = p.falta ? p.falta+". Cuando salga, esta página lo calcula sola." : "";
+  // tabla
+  $("tbody").innerHTML = R.per.map((q,j)=>{
+    const pill = j===R.vig ? '<span class="pill vig">Vigente</span>' : q.monto==null ? (q.estado==="fut" ? '<span class="pill fut">Más adelante</span>' : '<span class="pill pend">Pendiente</span>') : q.estado==="fut" ? '<span class="pill fut">Próximo</span>' : j===0 ? '<span class="pill ok">Inicial</span>' : '<span class="pill ok">Aplicado</span>';
+    return `<tr data-i="${j}" class="${j===i?"on":""}"><td>${q.n}</td><td>${fmtF(q.desde)}${q.meses&&j?`<div class="muted">${esc(q.meses)}</div>`:""}</td>`+
+      `<td class="r amt">${q.monto!=null?fmt$(q.monto):"—"}</td><td class="r">${q.aum!=null?fmtPct(q.aum):(j?"—":"")}</td>`+
+      `<td class="r hide-s">${j&&q.acum!=null?fmtPct(q.acum):""}</td><td class="hide-s">${pill}</td></tr>`;
+  }).join("");
+  history.replaceState(null,"",location.pathname+"?"+paramsURL().toString());
+}
+function pintarLag(){
+  $("ipcModo").hidden = st.ind!=="ipc";
+  if(st.ind!=="ipc") return;
+  $("lagHint").textContent = st.lag===2
+    ? "Toma los meses que ya están publicados el día del aumento (con un mes de desfase). Es lo más común en los contratos."
+    : "Toma los meses exactos del período. El último mes se publica a mediados del mes del aumento.";
+}
+$("tbody").addEventListener("click",e=>{ const tr=e.target.closest("tr"); if(!tr) return; elegido=+tr.dataset.i+1; pintar(); window.scrollTo({top:$("hero").offsetTop-12,behavior:"smooth"}); });
+
+/* =============================== controles =============================== */
+function seg(id, get, set){
+  const g = $(id), sync = ()=>g.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.v===String(get()))));
+  g.onclick = e=>{ const b=e.target.closest("button"); if(!b) return; set(b.dataset.v); sync(); cambio(); };
+  sync(); return sync;
+}
+const syncs = [
+  seg("cadaSeg", ()=>st.cada, v=>{st.cada=+v; elegido=null}),
+  seg("durSeg",  ()=>st.dur,  v=>{st.dur=+v; elegido=null}),
+  seg("indSeg",  ()=>st.ind,  v=>{st.ind=v}),
+  seg("lagSeg",  ()=>st.lag,  v=>{st.lag=+v}),
+  seg("ofSeg",   ()=>perfil.of, v=>{perfil.of=v; guardarPerfil()})
+];
+function cambio(){ pintar(); }
+function syncInputs(){
+  $("monto").value = st.monto ? st.monto.toLocaleString("es-AR") : "";
+  $("fecha").value = st.fecha; $("prop").value = st.prop; $("inq").value = st.inq; $("dueno").value = st.dueno;
+  $("agNombre").value = perfil.nombre; $("agTel").value = perfil.tel;
+  syncs.forEach(s=>s());
+  if(st.prop||st.inq||st.dueno) $("detProp").open = true;
+}
+$("monto").addEventListener("input", e=>{
+  const raw = e.target.value.replace(/\D/g,"").slice(0,12); st.monto = +raw || 0;
+  const pos = e.target.value.length - e.target.selectionStart;
+  e.target.value = st.monto ? st.monto.toLocaleString("es-AR") : "";
+  const np = Math.max(0, e.target.value.length - pos); try{ e.target.setSelectionRange(np,np); }catch(x){}
+  elegido = null; pintar();
+});
+$("fecha").addEventListener("change", e=>{ st.fecha = e.target.value; elegido=null; pintar(); });
+["prop","inq","dueno"].forEach(k=>$(k).addEventListener("input", e=>{ st[k]=e.target.value.trim(); clearTimeout(cambio.t); cambio.t=setTimeout(pintar,300); }));
+function guardarPerfil(){ store.set("kwAlq.perfil", JSON.stringify(perfil)); }
+$("agNombre").addEventListener("input", e=>{ perfil.nombre=e.target.value.trim(); guardarPerfil(); });
+$("agTel").addEventListener("input", e=>{ perfil.tel=e.target.value.trim(); guardarPerfil(); });
+$("nuevoBtn").onclick = ()=>{ st = Object.assign({}, DEF); elegido=null; syncInputs(); pintar(); $("monto").focus(); };
+
+/* =============================== textos =============================== */
+function textoMensaje(conLink){
+  const i = idxDestacado(), p = R.per[i], prev = R.per[i-1], o = OF[perfil.of], L = [];
+  L.push("*Actualización de alquiler*");
+  if(st.prop) L.push("Propiedad: "+st.prop);
+  if(st.inq) L.push("Inquilino/a: "+st.inq);
+  if(st.dueno) L.push("Propietario/a: "+st.dueno);
+  L.push("Índice: "+IND[st.ind].nombre+" ("+IND[st.ind].fuente+") · actualiza cada "+st.cada+(st.cada===1?" mes":" meses"));
+  L.push("");
+  if(i===0){ L.push("Alquiler inicial desde el "+fmtF(p.desde)+": *"+fmt$(p.monto)+"*"); }
+  else if(p.monto==null){ L.push("Actualización del "+fmtF(p.desde)+": pendiente. "+p.falta+"."); }
+  else{
+    if(prev && prev.monto!=null) L.push("Alquiler anterior: "+fmt$(prev.monto));
+    L.push("*Nuevo alquiler desde el "+fmtF(p.desde)+": "+fmt$(p.monto)+"*"+(p.aum!=null?" ("+fmtPct(p.aum).replace(" ","")+")":""));
+    L.push(st.ind==="ipc" ? "Meses de IPC: "+p.mesesLargo : p.mesesLargo);
+  }
+  const sig = R.per[i+1]; if(sig) L.push("Próxima actualización: "+fmtF(sig.desde));
+  L.push("");
+  if(perfil.nombre) L.push(perfil.nombre+" · "+o.nombre+(perfil.tel?" · "+perfil.tel:""));
+  else L.push(o.nombre);
+  if(conLink) L.push("Ver el detalle: "+linkCompartir());
+  return L.join("\n");
+}
+function nombreArchivo(ext){
+  const p = R.per[idxDestacado()];
+  const base = (st.prop ? st.prop.replace(/[^\wáéíóúñÁÉÍÓÚÑ ]+/g,"").trim().replace(/\s+/g,"-").slice(0,40) + "_" : "") + "alquiler_" + IND[st.ind].nombre + "_" + iso(p.desde);
+  return base + "." + ext;
+}
+
+/* =============================== imágenes (placa e informe) =============================== */
+const LOGO = {};
+function cargarLogo(k){ if(LOGO[k]) return LOGO[k]; return LOGO[k] = new Promise(r=>{ const i=new Image(); i.onload=()=>r(i); i.onerror=()=>r(null); i.src="logos/"+k+".png"; }); }
+const fuentes = ()=> document.fonts ? Promise.all(["700 60px 'Barlow Semi Condensed'","600 30px 'Barlow Semi Condensed'","400 28px Barlow","600 28px Barlow","700 28px Barlow"].map(f=>document.fonts.load(f))).catch(()=>{}) : Promise.resolve();
+const F = (w,s,fam)=> `${w} ${s}px ${fam==="d"?"'Barlow Semi Condensed','Arial Narrow'":"Barlow"}, Arial, sans-serif`;
+function rr(x,a,b,w,h,r){ x.beginPath(); x.moveTo(a+r,b); x.arcTo(a+w,b,a+w,b+h,r); x.arcTo(a+w,b+h,a,b+h,r); x.arcTo(a,b+h,a,b,r); x.arcTo(a,b,a+w,b,r); x.closePath(); }
+function txt(x,t,px,py,font,col,align,max){ x.font=font; x.fillStyle=col; x.textAlign=align||"left"; let s=String(t); if(max){ while(x.measureText(s).width>max && s.length>3) s=s.slice(0,-2)+"…"; } x.fillText(s,px,py); }
+function wrap(x,t,px,py,font,col,max,lh){ x.font=font; x.fillStyle=col; x.textAlign="left"; const w=String(t).split(" "); let line="", y=py; for(const word of w){ const tst=line?line+" "+word:word; if(x.measureText(tst).width>max && line){ x.fillText(line,px,y); line=word; y+=lh; } else line=tst; } if(line){ x.fillText(line,px,y); y+=lh; } return y; }
+const ROJO="#b40f1e", TINTA="#1d1a19", GRIS="#6c6462", LINEA="#e3dedc", FONDO="#f6f4f3";
+
+async function placa(){
+  await fuentes(); const logo = await cargarLogo(perfil.of.toLowerCase()+"-color");
+  const W=1080, H=1350, c=document.createElement("canvas"); c.width=W; c.height=H; const x=c.getContext("2d");
+  const i = idxDestacado(), p = R.per[i], prev = R.per[i-1], o = OF[perfil.of], M=72;
+  x.fillStyle="#fff"; x.fillRect(0,0,W,H);
+  // cabecera
+  if(logo){ const lh=118, lw=lh*logo.naturalWidth/logo.naturalHeight; x.drawImage(logo,M-6,56,lw,lh); }
+  txt(x,"ACTUALIZACIÓN",1008,108,F(700,34,"d"),ROJO,"right"); txt(x,"DE ALQUILER",1008,146,F(700,34,"d"),ROJO,"right");
+  x.fillStyle=ROJO; x.fillRect(0,214,W,10);
+  let y = 300;
+  if(st.prop){ txt(x,st.prop,M,y,F(700,44,"d"),TINTA,"left",W-2*M); y+=48; }
+  const quien = [st.inq&&("Inquilino/a: "+st.inq), st.dueno&&("Propietario/a: "+st.dueno)].filter(Boolean).join("   ·   ");
+  if(quien){ txt(x,quien,M,y,F(500,26),GRIS,"left",W-2*M); y+=40; }
+  txt(x,(IND[st.ind].nombre+" ("+IND[st.ind].fuente+") · actualiza cada "+st.cada+(st.cada===1?" mes":" meses")).toUpperCase(),M,y+6,F(700,24,"d"),GRIS,"left",W-2*M);
+  y += 70;
+  // bloque principal
+  rr(x,M,y,W-2*M,370,26); x.fillStyle=FONDO; x.fill();
+  const iy = y+70;
+  txt(x,(i===0?"ALQUILER INICIAL":"NUEVO ALQUILER")+" DESDE EL "+fmtF(p.desde),M+40,iy,F(700,28,"d"),GRIS);
+  if(p.monto!=null) txt(x,fmt$(p.monto),M+36,iy+130,F(700,138,"d"),TINTA,"left",W-2*M-80);
+  else txt(x,"Pendiente de publicación",M+40,iy+110,F(700,64,"d"),"#9c5700");
+  const det = i===0 ? "Valor de arranque del contrato" : (st.ind==="ipc"?"IPC de "+p.mesesLargo:p.mesesLargo);
+  txt(x,det,M+40,iy+190,F(500,28),GRIS,"left",W-2*M-80);
+  if(i>0 && p.aum!=null){
+    const pill = fmtPct(p.aum)+(prev&&prev.monto!=null?"   ·   antes "+fmt$(prev.monto):"");
+    x.font=F(700,30); const pw=x.measureText(pill).width+44; rr(x,M+36,iy+228,pw,54,27); x.fillStyle=ROJO; x.fill(); txt(x,pill,M+58,iy+265,F(700,30),"#fff");
+  }
+  y += 370+56;
+  // mini cronograma: hasta 5 filas alrededor del destacado
+  const desde = Math.max(0, Math.min(i-2, R.per.length-5)), filas = R.per.slice(desde, desde+5);
+  txt(x,"CRONOGRAMA",M,y,F(700,24,"d"),GRIS); y+=18;
+  filas.forEach((q,j)=>{
+    const yy = y + j*58 + 40, on = (desde+j)===i;
+    if(on){ rr(x,M-14,yy-38,W-2*M+28,54,12); x.fillStyle="#f7e3e5"; x.fill(); }
+    txt(x,"Desde "+fmtF(q.desde),M,yy,F(on?700:500,28),TINTA);
+    const pendTxt = q.desde > R.hoy ? "A calcular" : "Pendiente";
+    txt(x,q.monto!=null?fmt$(q.monto):pendTxt,W-M-210,yy,F(700,30,"d"),q.monto!=null?TINTA:(q.desde>R.hoy?GRIS:"#9c5700"),"right");
+    txt(x,q.n===1?"inicial":(q.aum!=null?fmtPct(q.aum):""),W-M,yy,F(600,26),q.n===1?GRIS:ROJO,"right");
+  });
+  // pie
+  const fy = H-150; x.fillStyle=LINEA; x.fillRect(M,fy-36,W-2*M,2);
+  txt(x,(perfil.nombre||o.nombre)+(perfil.tel?"  ·  "+perfil.tel:""),M,fy,F(700,30),TINTA,"left",W-2*M);
+  txt(x,"Corredor interviniente: "+o.corredor+" · "+o.mat,M,fy+40,F(500,22),GRIS,"left",W-2*M);
+  txt(x,LEYENDA+". Cálculo orientativo con índices oficiales ("+IND[st.ind].fuente+").",M,fy+72,F(400,20),GRIS,"left",W-2*M);
+  return c;
+}
+
+async function informePaginas(){
+  await fuentes(); const logo = await cargarLogo(perfil.of.toLowerCase()+"-color");
+  const W=1240, H=1754, M=90, o=OF[perfil.of], pags=[], hoy=new Date();
+  const i = idxDestacado(), p = R.per[i];
+  const nueva = ()=>{ const c=document.createElement("canvas"); c.width=W; c.height=H; const x=c.getContext("2d"); x.fillStyle="#fff"; x.fillRect(0,0,W,H);
+    if(logo){ const lh=96, lw=lh*logo.naturalWidth/logo.naturalHeight; x.drawImage(logo,M-6,60,lw,lh); }
+    txt(x,"ACTUALIZACIÓN DE ALQUILER",W-M,104,F(700,34,"d"),ROJO,"right"); txt(x,"Emitido el "+fmtF(hoy),W-M,140,F(500,22),GRIS,"right");
+    x.fillStyle=ROJO; x.fillRect(M,180,W-2*M,4); pags.push(c); return x; };
+  let x = nueva(), y = 250;
+  // datos del contrato
+  const datos = [["Propiedad",st.prop||"—"],["Inquilino/a",st.inq||"—"],["Propietario/a",st.dueno||"—"],
+    ["Inicio del contrato",fmtF(R.S)],["Duración",st.dur/12+(st.dur===12?" año":" años")+" (hasta el "+fmtF(new Date(R.fin-864e5))+")"],
+    ["Alquiler inicial",fmt$(st.monto)],["Índice",IND[st.ind].nombre+" — "+IND[st.ind].largo+" ("+IND[st.ind].fuente+")"],
+    ["Actualización","Cada "+st.cada+(st.cada===1?" mes":" meses")+(st.ind==="ipc"?(st.lag===2?" · último IPC publicado (un mes de desfase)":" · meses del período"):" · fecha contra fecha")]];
+  datos.forEach(([a,b],j)=>{ const yy=y+j*44; txt(x,a,M,yy,F(600,24),GRIS); txt(x,b,M+300,yy,F(500,25),TINTA,"left",W-2*M-300); });
+  y += datos.length*44 + 30;
+  // destacado
+  rr(x,M,y,W-2*M,180,20); x.fillStyle=FONDO; x.fill();
+  txt(x,(i===0?"Alquiler inicial":"Alquiler")+" desde el "+fmtF(p.desde),M+34,y+56,F(600,26),GRIS);
+  txt(x,p.monto!=null?fmt$(p.monto):"Pendiente de publicación",M+30,y+135,F(700,p.monto!=null?84:52,"d"),p.monto!=null?TINTA:"#9c5700");
+  if(i>0 && p.aum!=null) txt(x,fmtPct(p.aum)+" sobre el período anterior",W-M-34,y+132,F(700,30),ROJO,"right");
+  y += 180 + 60;
+  // tabla
+  const cols=[[M,"#","left"],[M+70,"Desde","left"],[M+250,"Hasta","left"],[M+430,st.ind==="ipc"?"Meses de IPC":"Coeficiente","left"],[W-M-300,"Alquiler","right"],[W-M-150,"Aumento","right"],[W-M,"Acumulado","right"]];
+  const encabezado = ()=>{ cols.forEach(([cx,t,al])=>txt(x,t.toUpperCase(),cx,y,F(700,20,"d"),GRIS,al)); y+=14; x.fillStyle=LINEA; x.fillRect(M,y,W-2*M,2); y+=40; };
+  encabezado();
+  R.per.forEach((q,j)=>{
+    if(y > H-230){ x = nueva(); y = 250; encabezado(); }
+    if(j===i){ x.fillStyle="#f7e3e5"; x.fillRect(M-10,y-30,W-2*M+20,44); }
+    txt(x,q.n,cols[0][0],y,F(500,22),TINTA); txt(x,fmtF(q.desde),cols[1][0],y,F(500,22),TINTA); txt(x,fmtF(q.hasta),cols[2][0],y,F(500,22),TINTA);
+    const col3 = !j ? "inicial" : st.ind==="ipc" ? q.meses : (q.ratio!=null ? q.ratio.toLocaleString("es-AR",{minimumFractionDigits:4,maximumFractionDigits:4}) : "");
+    txt(x,col3,cols[3][0],y,F(400,20),GRIS,"left",cols[4][0]-cols[3][0]-150);
+    txt(x,q.monto!=null?fmt$(q.monto):(q.desde>R.hoy?"A calcular":"Pendiente"),cols[4][0],y,F(700,23),q.monto!=null?TINTA:(q.desde>R.hoy?GRIS:"#9c5700"),"right");
+    txt(x,j&&q.aum!=null?fmtPct(q.aum):"",cols[5][0],y,F(500,22),ROJO,"right");
+    txt(x,j&&q.acum!=null?fmtPct(q.acum):"",cols[6][0],y,F(500,22),GRIS,"right");
+    y+=44;
+  });
+  // pie en todas las páginas
+  pags.forEach((c,n)=>{ const x=c.getContext("2d"), fy=H-150;
+    x.fillStyle=LINEA; x.fillRect(M,fy-30,W-2*M,2);
+    txt(x,(perfil.nombre?perfil.nombre+" · ":"")+o.nombre+(perfil.tel?" · "+perfil.tel:""),M,fy,F(700,24),TINTA,"left",W-2*M-120);
+    txt(x,"Corredor interviniente: "+o.corredor+" · "+o.mat+". "+LEYENDA+".",M,fy+34,F(400,19),GRIS,"left",W-2*M);
+    wrap(x,"Cálculo orientativo con índices oficiales: ICL, CER y UVA del BCRA; IPC nivel general del INDEC. Lo que rige es lo pactado en el contrato.",M,fy+64,F(400,19),GRIS,W-2*M,26);
+    txt(x,"Página "+(n+1)+" de "+pags.length,W-M,fy,F(500,20),GRIS,"right");
+  });
+  return pags;
+}
+const blobDe = (c,tipo,q)=> new Promise(r=>c.toBlob(r,tipo||"image/png",q));
+function bajar(nombre, blob){
+  const url=URL.createObjectURL(blob), a=document.createElement("a"); a.href=url; a.download=nombre;
+  document.body.append(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),8000); toast("Descargando "+nombre);
+}
+function script(src){ return new Promise((ok,ko)=>{ if(document.querySelector(`script[src="${src}"]`)) return ok(); const s=document.createElement("script"); s.src=src; s.onload=ok; s.onerror=ko; document.head.append(s); }); }
+async function ocupado(btn, fn){ const t=btn.innerHTML; btn.disabled=true; try{ await fn(); } catch(e){ console.error(e); toast("No salió: "+(e.message||e)); } finally{ btn.disabled=false; btn.innerHTML=t; } }
+
+/* =============================== acciones =============================== */
+$("waBtn").onclick = ()=>{ window.open("https://wa.me/?text="+encodeURIComponent(textoMensaje(false)),"_blank","noopener"); };
+$("imgBtn").onclick = e=> ocupado(e.currentTarget, async()=>{ bajar(nombreArchivo("png"), await blobDe(await placa())); });
+$("pdfBtn").onclick = e=> ocupado(e.currentTarget, async()=>{
+  await script("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+  const pags = await informePaginas(), doc = new window.jspdf.jsPDF({unit:"mm", format:"a4"});
+  pags.forEach((c,n)=>{ if(n) doc.addPage(); doc.addImage(c.toDataURL("image/jpeg",.92),"JPEG",0,0,210,297); });
+  doc.setProperties({title:"Actualización de alquiler", author: perfil.nombre || OF[perfil.of].nombre});
+  bajar(nombreArchivo("pdf"), doc.output("blob"));
+});
+$("xlsBtn").onclick = e=> ocupado(e.currentTarget, async()=>{
+  await script("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js");
+  const X = window.XLSX, o = OF[perfil.of];
+  const xd = d => ({t:"n", v:(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())-Date.UTC(1899,11,30))/864e5, z:"dd/mm/yyyy"});
+  const filas = [
+    ["Actualización de alquiler"], [],
+    ["Propiedad", st.prop], ["Inquilino/a", st.inq], ["Propietario/a", st.dueno],
+    ["Inicio del contrato", xd(R.S)], ["Duración (meses)", st.dur], ["Alquiler inicial", st.monto],
+    ["Índice", IND[st.ind].nombre+" — "+IND[st.ind].largo+" ("+IND[st.ind].fuente+")"],
+    ["Actualiza cada (meses)", st.cada],
+    ["Criterio", st.ind==="ipc" ? (st.lag===2?"Último IPC publicado (un mes de desfase)":"Meses del período") : "Fecha contra fecha"],
+    [],
+    ["Período","Desde","Hasta",st.ind==="ipc"?"Meses de IPC":"Comparación","Coeficiente","Alquiler","Aumento vs. anterior","Acumulado","Estado"]
+  ];
+  const cab = filas.length;
+  R.per.forEach((q,j)=> filas.push([q.n, xd(q.desde), xd(q.hasta), j?q.meses:"inicial", q.ratio!=null?q.ratio:null, q.monto, q.aum!=null?q.aum/100:null, j&&q.acum!=null?q.acum/100:null,
+    j===R.vig?"Vigente":q.monto==null?(q.estado==="fut"?"Más adelante":"Pendiente"):q.estado==="fut"?"Próximo":j===0?"Inicial":"Aplicado"]));
+  filas.push([], ["Emitido el", xd(new Date())], ["Por", (perfil.nombre?perfil.nombre+" · ":"")+o.nombre+(perfil.tel?" · "+perfil.tel:"")],
+    ["Corredor interviniente", o.corredor+" · "+o.mat], ["Fuentes","ICL, CER y UVA: BCRA. IPC nivel general: INDEC. Cálculo orientativo."]);
+  const ws = X.utils.aoa_to_sheet(filas);
+  ws["!cols"] = [{wch:22},{wch:12},{wch:12},{wch:24},{wch:12},{wch:14},{wch:12},{wch:12},{wch:11}];
+  const r = X.utils.decode_range(ws["!ref"]);
+  for(let R0=0; R0<=r.e.r; R0++) for(let C=0; C<=r.e.c; C++){
+    const cell = ws[X.utils.encode_cell({r:R0,c:C})]; if(!cell) continue;
+    if(R0>=cab){ if(C===5) cell.z='"$" #,##0'; if(C===6||C===7) cell.z="0.00%"; if(C===4) cell.z="0.000000"; }
+    if(R0===7 && C===1) cell.z='"$" #,##0';
+  }
+  const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, ws, "Alquiler");
+  bajar(nombreArchivo("xlsx"), new Blob([X.write(wb,{bookType:"xlsx",type:"array"})],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));
+});
+async function copiar(t, ok){
+  try{ await navigator.clipboard.writeText(t); toast(ok); }
+  catch(e){ const a=document.createElement("textarea"); a.value=t; document.body.append(a); a.select(); try{ document.execCommand("copy"); toast(ok); }catch(x){ toast("No se pudo copiar"); } a.remove(); }
+}
+$("copyBtn").onclick = ()=> copiar(textoMensaje(false).replace(/\*/g,""), "Texto copiado");
+$("linkBtn").onclick = ()=> copiar(linkCompartir(), "Link copiado: abre este mismo cálculo");
+$("shareBtn").onclick = e=> ocupado(e.currentTarget, async()=>{
+  const texto = textoMensaje(false).replace(/\*/g,"");
+  const file = new File([await blobDe(await placa())], nombreArchivo("png"), {type:"image/png"});
+  if(navigator.canShare && navigator.canShare({files:[file]})){ try{ await navigator.share({files:[file], text:texto, title:"Actualización de alquiler"}); }catch(x){ if(x.name!=="AbortError") throw x; } }
+  else if(navigator.share){ try{ await navigator.share({text:texto, url:linkCompartir(), title:"Actualización de alquiler"}); }catch(x){ if(x.name!=="AbortError") throw x; } }
+  else { bajar(file.name, file); }
+});
+
+/* =============================== guardados =============================== */
+const leerGuardados = ()=>{ try{ return JSON.parse(store.get("kwAlq.calcs")||"[]"); }catch(e){ return []; } };
+function pintarGuardados(){
+  const L = leerGuardados(); $("savedCard").hidden = !L.length;
+  $("saved").innerHTML = L.map((g,j)=>`<div class="it"><div><b>${esc(g.nombre)}</b><span>${esc(g.resumen||"")} · guardado el ${fmtF(new Date(g.ts))}</span></div>`+
+    `<span class="row"><button type="button" class="btn small" data-a="abrir" data-j="${j}">Abrir</button><button type="button" class="btn ghost small" data-a="borrar" data-j="${j}" aria-label="Borrar ${esc(g.nombre)}">Borrar</button></span></div>`).join("");
+}
+$("saved").onclick = e=>{
+  const b = e.target.closest("button"); if(!b) return; const L = leerGuardados(), g = L[+b.dataset.j]; if(!g) return;
+  if(b.dataset.a==="borrar"){ if(!confirm("¿Borrar “"+g.nombre+"”?")) return; L.splice(+b.dataset.j,1); store.set("kwAlq.calcs",JSON.stringify(L)); pintarGuardados(); toast("Borrado"); return; }
+  st = Object.assign({}, DEF, g.st); elegido = null; syncInputs(); pintar(); window.scrollTo({top:0,behavior:"smooth"}); toast("Abierto: "+g.nombre);
+};
+$("saveBtn").onclick = ()=>{
+  const sug = st.prop || ("Contrato "+fmtF(parseISO(st.fecha))+" · "+fmt$(st.monto));
+  const nombre = prompt("¿Con qué nombre lo guardo?", sug); if(nombre==null) return;
+  const L = leerGuardados(), resumen = fmt$(st.monto)+" desde "+fmtF(parseISO(st.fecha))+" · "+IND[st.ind].nombre+" cada "+st.cada;
+  const k = L.findIndex(g=>g.nombre===(nombre.trim()||sug));
+  const item = {nombre:nombre.trim()||sug, st:Object.assign({},st), resumen, ts:Date.now()};
+  if(k>=0) L[k]=item; else L.unshift(item);
+  store.set("kwAlq.calcs", JSON.stringify(L.slice(0,60))); pintarGuardados(); toast("Guardado en este dispositivo");
+};
+
+/* =============================== arranque =============================== */
+leerURL.hecho = leerURL();
+syncInputs(); pintarGuardados(); pintar();
+const vinoConLink = leerURL.hecho;
+cargarIndices().then(D=>{ DATA=D; }).catch(()=>{ DATA=null; }).finally(()=>{
+  pintarStatus(); pintar();
+  // si abrieron un link compartido desde el celular, ir directo al resultado
+  if(vinoConLink && R && window.innerWidth < 960) $("hero").scrollIntoView({behavior:"smooth", block:"start"});
+});
+</script>
+</body>
+</html>
