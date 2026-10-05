@@ -1,7 +1,5 @@
 # Herramientas KW
 
-Portada con todas las herramientas: https://soledadsenger-creator.github.io/marca-agua-kw/herramientas/
-
 Herramientas para los asesores de KW ON, KW Parque Leloir y KW City. Cada cambio que se sube a `main` se publica solo.
 
 ## Marca de agua — `index.html`

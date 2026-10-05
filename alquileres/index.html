@@ -31,12 +31,7 @@ html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset
 [hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 var(--body);padding-inline:16px;padding-block:20px 48px}
 .wrap{max-width:1240px;margin:0 auto;display:grid;gap:20px}
-.tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-.tools .eyebrow{font:700 12px var(--display);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-right:4px}
-.tools a{font:600 13px var(--body);color:var(--muted);text-decoration:none;padding:5px 11px;border-radius:99px;border:1px solid var(--line);background:var(--surface)}
-.tools a.eyebrow-link{border:0;background:none;padding:5px 4px;font:700 12px var(--display);letter-spacing:.12em;text-transform:uppercase}
-.tools a[aria-current="page"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-header h1{font-family:var(--display);font-size:clamp(26px,5vw,36px);line-height:1.05;margin:8px 0 0;text-wrap:balance}
+header h1{font-family:var(--display);font-size:clamp(26px,5vw,36px);line-height:1.05;margin:0;text-wrap:balance}
 header p{margin:6px 0 0;color:var(--muted);max-width:68ch}
 .layout{display:grid;gap:20px;grid-template-columns:1fr}
 @media (min-width:960px){.layout{grid-template-columns:340px 1fr;align-items:start}.panel{position:sticky;top:16px}}
@@ -136,12 +131,6 @@ main{display:grid;gap:16px;min-width:0}
 <body>
 <div class="wrap">
   <header>
-    <nav class="tools" aria-label="Herramientas KW">
-      <a href="../herramientas/" class="eyebrow-link">← Herramientas</a>
-      <a href="https://placas-kw-agentes.vercel.app" target="_blank" rel="noopener">Placas</a>
-      <a href="../">Marca de agua</a>
-      <a href="./" aria-current="page">Calculadora de alquileres</a>
-    </nav>
     <h1>Calculadora de alquileres</h1>
     <p>Cargá el contrato y te da el valor actualizado de cada período con los índices oficiales del BCRA y el INDEC. Después lo mandás por WhatsApp, lo descargás en imagen, PDF o Excel, o lo guardás para la próxima.</p>
   </header>
