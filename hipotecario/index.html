@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#b40f1e">
+<meta name="description" content="Simulador de créditos hipotecarios UVA: cuota, ingreso necesario, cuánto prestan y comparativo de bancos.">
+<link rel="icon" href="../icon.png">
+<link rel="apple-touch-icon" href="../icon.png">
+<title>Simulador Hipotecario UVA KW</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#f6f4f3; --surface:#ffffff; --line:#e3dedc; --fg:#1d1a19; --muted:#6c6462;
+  --accent:#b40f1e; --accent-ink:#ffffff; --accent-soft:#f7e3e5;
+  --ok:#1e7a46; --ok-soft:#e7f1e9; --warn:#9c5700; --warn-soft:#fff3d6;
+  --display:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#161314; --surface:#211d1e; --line:#3a3335; --fg:#f2eeed; --muted:#a99f9d;
+  --accent:#e2384a; --accent-ink:#ffffff; --accent-soft:#3a1d21;
+  --ok:#6fcf97; --ok-soft:#173226; --warn:#f2b45a; --warn-soft:#3a2c14; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#161314; --surface:#211d1e; --line:#3a3335; --fg:#f2eeed; --muted:#a99f9d;
+  --accent:#e2384a; --accent-ink:#ffffff; --accent-soft:#3a1d21;
+  --ok:#6fcf97; --ok-soft:#173226; --warn:#f2b45a; --warn-soft:#3a2c14; color-scheme:dark}
+*{box-sizing:border-box}
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 var(--body);padding-inline:16px;padding-block:20px 48px}
+.wrap{max-width:1240px;margin:0 auto;display:grid;gap:20px}
+header h1{font-family:var(--display);font-size:clamp(26px,5vw,36px);line-height:1.05;margin:0;text-wrap:balance}
+header p{margin:6px 0 0;color:var(--muted);max-width:70ch}
+.layout{display:grid;gap:20px;grid-template-columns:1fr}
+@media (min-width:960px){.layout{grid-template-columns:340px 1fr;align-items:start}.panel{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:16px;min-width:0}
+.step{display:grid;gap:8px;min-width:0}
+.label{font-family:var(--display);font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.label-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.label-row output{font:700 15px var(--display);color:var(--fg);font-variant-numeric:tabular-nums}
+.seg{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.seg.three{grid-template-columns:repeat(3,1fr)}
+.seg button{font:600 14px var(--body);padding:10px 4px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer;line-height:1.2}
+.seg button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button:focus-visible,input:focus-visible,a:focus-visible,summary:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=text],input[type=tel],select{width:100%;font:500 16px var(--body);padding:11px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);min-width:0}
+.money{position:relative}
+.money span{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-weight:600}
+.money input{padding-left:42px;font-size:19px;font-weight:700;font-variant-numeric:tabular-nums}
+.money.ars input{padding-left:28px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.hint{font-size:13px;color:var(--muted);line-height:1.45}
+.hint a{color:var(--accent)}
+details{border-top:1px solid var(--line);padding-top:12px}
+details>summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center}
+details>summary::-webkit-details-marker{display:none}
+details>summary::after{content:"+";font:600 20px var(--body);color:var(--muted)}
+details[open]>summary::after{content:"–"}
+details .step{margin-top:10px}
+.field{display:grid;gap:4px}
+.field label{font-size:13px;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{font:600 15px var(--body);padding:11px 16px;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;line-height:1.2}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.quiet{background:var(--surface);border-color:var(--line);color:var(--fg)}
+.btn.small{font-size:13px;padding:7px 12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn svg{width:18px;height:18px;flex:none}
+
+main{display:grid;gap:16px;min-width:0}
+.status{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:13px;color:var(--muted)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block;margin-right:6px;vertical-align:1px}
+.dot.ok{background:var(--ok)} .dot.warn{background:var(--warn)}
+.hero{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-width:0}
+.hero .top{background:var(--accent);color:var(--accent-ink);padding:14px 18px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
+.hero .top b{font:700 13px var(--display);letter-spacing:.12em;text-transform:uppercase}
+.hero .top span{font-size:13px;opacity:.92}
+.hero .body{padding:18px;display:grid;gap:14px}
+.big{font:700 clamp(38px,8vw,58px)/1 var(--display);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.sub{color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kpi{background:var(--bg);border-radius:10px;padding:10px 12px;min-width:0}
+.kpi small{display:block;font:700 11px var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.kpi b{font:700 20px var(--display);font-variant-numeric:tabular-nums}
+.kpi span{display:block;font-size:12.5px;color:var(--muted)}
+.verdict{border-radius:10px;padding:12px 14px;font-size:14.5px;line-height:1.45}
+.verdict b{font-weight:700}
+.verdict.ok{background:var(--ok-soft);color:var(--ok)}
+.verdict.no{background:var(--warn-soft);color:var(--warn)}
+.empty{background:var(--surface);border:2px dashed var(--line);border-radius:12px;padding:28px 18px;text-align:center;color:var(--muted)}
+.empty strong{display:block;font:700 22px var(--display);color:var(--fg);margin-bottom:4px}
+.actions{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+@media (min-width:640px){.actions{grid-template-columns:repeat(4,1fr)}}
+.actions .btn{width:100%;font-size:14px;padding:10px 8px}
+.actions .wa{background:#1f8f4e;border-color:#1f8f4e}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:10px;min-width:0}
+.card h2{font:700 13px var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0}
+.tbl{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px}
+.tbl th{text-align:left;font:700 11px var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--line)}
+.tbl td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:last-child td{border-bottom:0}
+.tbl td.r,.tbl th.r{text-align:right;white-space:nowrap}
+.tbl tbody tr{cursor:pointer}
+.tbl tbody tr:hover td{background:var(--bg)}
+.tbl tbody tr.on td{background:var(--accent-soft)}
+.tbl .amt{font-weight:700}
+.tbl .muted{color:var(--muted);font-size:12.5px}
+.pill{font:700 10.5px var(--display);letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:99px;white-space:nowrap;display:inline-block}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.no{background:var(--warn-soft);color:var(--warn)}
+.pill.best{background:var(--accent);color:#fff}
+@media (max-width:560px){ .tbl .hide-s{display:none} .tbl td,.tbl th{padding:8px 5px} }
+.saved{display:grid;gap:8px}
+.saved .it{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--bg);border-radius:10px;padding:10px 12px;min-width:0}
+.saved .it div{min-width:0}
+.saved .it b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.saved .it span{font-size:12.5px;color:var(--muted)}
+.saved .it .row{display:flex;gap:4px;flex:none}
+.foot{font-size:12.5px;color:var(--muted);line-height:1.6}
+.foot a{color:var(--accent)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px;max-width:calc(100% - 32px);z-index:9}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Simulador de crédito hipotecario UVA</h1>
+    <p>Cargá el precio y los ingresos del comprador: te dice cuánto le prestan, la cuota de arranque, el ingreso que le piden y cuánta plata propia necesita, banco por banco. Después lo mandás por WhatsApp o lo bajás en imagen, PDF o Excel.</p>
+  </header>
+
+  <div class="layout">
+    <aside class="panel" aria-label="Datos de la operación">
+      <div class="step">
+        <label class="label" for="precio">Precio de la propiedad</label>
+        <div class="money"><span>US$</span><input type="text" id="precio" inputmode="numeric" autocomplete="off" placeholder="90.000"></div>
+      </div>
+      <div class="step">
+        <div class="label-row"><label class="label" for="fin">Financiación</label><output id="finOut"></output></div>
+        <input type="range" id="fin" min="10" max="80" step="5">
+        <span class="hint" id="finHint"></span>
+      </div>
+      <div class="step">
+        <span class="label">Plazo</span>
+        <div class="seg" id="plazoSeg" role="group" aria-label="Plazo en años">
+          <button type="button" data-v="10">10</button><button type="button" data-v="15">15</button><button type="button" data-v="20">20</button><button type="button" data-v="25">25</button><button type="button" data-v="30">30</button>
+        </div>
+        <span class="hint">En años. Si un banco presta a menos, se usa su plazo máximo.</span>
+      </div>
+      <div class="step">
+        <label class="label" for="ingreso">Ingreso neto del hogar</label>
+        <div class="money ars"><span>$</span><input type="text" id="ingreso" inputmode="numeric" autocomplete="off" placeholder="Opcional · por mes"></div>
+        <span class="hint">Sumá el de todos los titulares y codeudores. Con este dato te dice si le alcanza y cuánto le prestan.</span>
+      </div>
+      <div class="step">
+        <label class="label" for="banco">Banco</label>
+        <select id="banco"></select>
+      </div>
+
+      <details id="detAjustes">
+        <summary><span class="label">Cotizaciones y gastos</span></summary>
+        <div class="step">
+          <div class="grid2">
+            <div class="field"><label for="tc">Dólar ($ por US$)</label><input type="text" id="tc" inputmode="decimal"></div>
+            <div class="field"><label for="uva">Valor UVA ($)</label><input type="text" id="uva" inputmode="decimal"></div>
+          </div>
+          <div class="field"><label for="gastos">Gastos de compra (% del precio)</label><input type="text" id="gastos" inputmode="decimal"></div>
+          <span class="hint">Escritura, sellos, hipoteca, tasación y comisión. Suele andar entre 8 % y 11 %. El dólar y la UVA vienen del BCRA: cambialos si el banco usa otra cotización.</span>
+          <button type="button" class="btn ghost small" id="cotizBtn">Volver a las cotizaciones del día</button>
+        </div>
+      </details>
+
+      <details id="detBanco">
+        <summary><span class="label">Condiciones del banco</span></summary>
+        <div class="step">
+          <span class="hint" id="bancoNota"></span>
+          <div class="grid2">
+            <div class="field"><label for="bTna">Tasa (TNA %)</label><input type="text" id="bTna" inputmode="decimal"></div>
+            <div class="field"><label for="bPlazo">Plazo máx. (años)</label><input type="text" id="bPlazo" inputmode="numeric"></div>
+            <div class="field"><label for="bFin">Financia hasta (%)</label><input type="text" id="bFin" inputmode="numeric"></div>
+            <div class="field"><label for="bRci">Cuota / ingreso (%)</label><input type="text" id="bRci" inputmode="decimal"></div>
+          </div>
+          <span class="hint">Si el banco te pasa otras condiciones, cambialas acá: quedan guardadas en este teléfono.</span>
+          <button type="button" class="btn ghost small" id="bResetBtn">Volver a las condiciones relevadas</button>
+        </div>
+      </details>
+
+      <details id="detProp">
+        <summary><span class="label">Datos para el informe (opcional)</span></summary>
+        <div class="step">
+          <div class="field"><label for="cliente">Comprador/a</label><input type="text" id="cliente"></div>
+          <div class="field"><label for="prop">Propiedad</label><input type="text" id="prop" placeholder="Casa 3 amb. · Parque Leloir"></div>
+        </div>
+      </details>
+
+      <details id="detYo">
+        <summary><span class="label">Tus datos y oficina</span></summary>
+        <div class="step">
+          <div class="seg three" id="ofSeg" role="group" aria-label="Oficina">
+            <button type="button" data-v="LELOIR">Leloir</button>
+            <button type="button" data-v="ON">KW ON</button>
+            <button type="button" data-v="CITY">City</button>
+          </div>
+          <div class="field"><label for="agNombre">Tu nombre</label><input type="text" id="agNombre" autocomplete="name"></div>
+          <div class="field"><label for="agTel">Tu WhatsApp</label><input type="tel" id="agTel" autocomplete="tel" placeholder="11 1234-5678"></div>
+          <span class="hint">Se guardan en este teléfono y salen al pie de la imagen y del PDF.</span>
+        </div>
+      </details>
+      <button type="button" class="btn ghost small" id="nuevoBtn">Empezar una simulación nueva</button>
+    </aside>
+
+    <main>
+      <div class="status" id="status"><span><span class="dot"></span>Cargando dólar y UVA del BCRA…</span></div>
+
+      <div class="empty" id="empty">
+        <strong>Cargá el precio de la propiedad</strong>
+        El resto ya viene con valores típicos: lo ajustás cuando quieras.
+      </div>
+
+      <section class="hero" id="hero" hidden aria-live="polite">
+        <div class="top"><b id="heroTag">Cuota inicial</b><span id="heroBanco"></span></div>
+        <div class="body">
+          <div>
+            <div class="sub" id="heroSub"></div>
+            <div class="big" id="heroCuota"></div>
+            <div class="sub" id="heroUva"></div>
+          </div>
+          <div class="verdict" id="verdict" hidden></div>
+          <div class="kpis" id="kpis"></div>
+        </div>
+      </section>
+
+      <div class="actions" id="actions" hidden>
+        <button type="button" class="btn wa" id="waBtn"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.7 14.9L2 22l5.2-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3.1.8.8-3-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.3a.5.5 0 0 0 0-.5l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.2c0-.1-.2-.2-.4-.3Z"/></svg>WhatsApp</button>
+        <button type="button" class="btn" id="imgBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>Imagen</button>
+        <button type="button" class="btn" id="pdfBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>PDF</button>
+        <button type="button" class="btn" id="xlsBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>Excel</button>
+        <button type="button" class="btn quiet" id="copyBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>Copiar texto</button>
+        <button type="button" class="btn quiet" id="linkBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>Copiar link</button>
+        <button type="button" class="btn quiet" id="shareBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>Compartir</button>
+        <button type="button" class="btn quiet" id="saveBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Guardar</button>
+      </div>
+
+      <section class="card" id="compCard" hidden>
+        <h2>Comparativo de bancos</h2>
+        <span class="hint">Misma propiedad, misma financiación y mismo plazo (o el máximo de cada banco). Tocá un banco para verlo arriba y en lo que exportes.</span>
+        <div style="overflow-x:auto">
+          <table class="tbl">
+            <thead><tr><th>Banco</th><th class="r">Tasa</th><th class="r hide-s">Plazo</th><th class="r hide-s">Crédito</th><th class="r">Cuota inicial</th><th class="r">Ingreso pedido</th><th class="hide-s"></th></tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+        <span class="hint" id="relevado"></span>
+      </section>
+
+      <section class="card" id="savedCard" hidden>
+        <h2>Mis simulaciones guardadas</h2>
+        <div class="saved" id="saved"></div>
+        <span class="hint">Quedan guardadas en este teléfono o compu. Para tenerlas en otro lado, usá “Copiar link”.</span>
+      </section>
+
+      <p class="foot">
+        Simulación orientativa con sistema francés: la cuota se fija en UVA y en pesos se ajusta todos los meses con la UVA (inflación). No incluye seguros de vida e incendio ni gastos de otorgamiento, que suman a la cuota. La aprobación, la tasa final y el monto los define cada banco según su evaluación.
+        Dólar mayorista (Com. A 3500) y UVA del <a href="https://www.bcra.gob.ar/PublicacionesEstadisticas/Principales_variables.asp" target="_blank" rel="noopener">BCRA</a>.
+      </p>
+    </main>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/* =============================== datos fijos =============================== */
+const OF = {
+  LELOIR: {nombre:"KW Parque Leloir", corredor:"Julian Aguilar Amat", mat:"CMCPSI 6737 // CUCICBA 7839"},
+  ON:     {nombre:"KW ON",            corredor:"Julian Aguilar Amat", mat:"CMCPSI 6737 // CUCICBA 7839"},
+  CITY:   {nombre:"KW City",          corredor:"Juan Eloy Gramajo",   mat:"CMCPSI 6760 / CUCICBA 9368"}
+};
+const LEYENDA = "Cada oficina opera de forma independiente";
+// Condiciones relevadas el 05/10/2026 (Ámbito 03/10/2026 y sept. 2026; El Litoral sept. 2026). Todas editables.
+const RELEVADO = "5 de octubre de 2026";
+const BANCOS = [
+  {id:"nacion",      nombre:"Banco Nación",      tna:6.7, plazo:30, fin:75, rci:25, topeUVA:210000, nota:"Tasa para quien cobra el sueldo en el banco. Tope 210.000 UVA."},
+  {id:"hipotecario", nombre:"Banco Hipotecario", tna:7.5, plazo:15, fin:80, rci:25, nota:"Primera vivienda."},
+  {id:"bbva",        nombre:"BBVA",              tna:7.5, plazo:30, fin:75, rci:25, nota:"Hasta 80 % para clientes preferenciales."},
+  {id:"ciudad",      nombre:"Banco Ciudad",      tna:6.5, plazo:25, fin:75, rci:25, topePesos:150e6, nota:"No exige cobrar el sueldo en el banco. Tope $ 150 millones."},
+  {id:"provincia",   nombre:"Banco Provincia",   tna:6.5, plazo:20, fin:75, rci:25, nota:"Financiación y relación cuota/ingreso a confirmar con el banco."},
+  {id:"icbc",        nombre:"ICBC",              tna:6.9, plazo:20, fin:80, rci:25, topePesos:450e6, nota:"6,9 % con sueldo en el banco; 9,9 % sin sueldo. Tope $ 450 millones."},
+  {id:"santander",   nombre:"Santander",         tna:7.5, plazo:20, fin:75, rci:25, nota:"Plazo y financiación a confirmar con el banco."},
+  {id:"galicia",     nombre:"Galicia",           tna:7.5, plazo:20, fin:75, rci:25, nota:"Plazo y financiación a confirmar con el banco."},
+  {id:"macro",       nombre:"Macro",             tna:7.5, plazo:20, fin:75, rci:25, nota:"Tasa para Plan Sueldo Selecta. Financiación a confirmar."}
+];
+const DEF = {precio:0, fin:75, plazo:20, ingreso:0, banco:"nacion", gastos:9, tc:0, uva:0, cliente:"", prop:""};
+
+/* =============================== utilidades =============================== */
+const $ = id => document.getElementById(id);
+const store = {get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const fmt$ = n => "$\u00a0" + Math.round(n).toLocaleString("es-AR");
+const fmtUSD = n => "US$\u00a0" + Math.round(n).toLocaleString("es-AR");
+const fmtN = (n,d) => n.toLocaleString("es-AR",{minimumFractionDigits:d||0,maximumFractionDigits:d||0});
+const fmtM = n => n>=1e6 ? "$\u00a0" + (n/1e6).toLocaleString("es-AR",{maximumFractionDigits:1}) + "\u00a0M" : fmt$(n);
+const pad = n => String(n).padStart(2,"0");
+const iso = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const fmtF = d => pad(d.getDate())+"/"+pad(d.getMonth()+1)+"/"+d.getFullYear();
+const parseISO = s => { const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d||1); };
+const num = s => { const t = String(s||"").trim().replace(/\./g,"").replace(",","."); const n = parseFloat(t); return isFinite(n) ? n : 0; };
+const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function toast(m){ const t=$("toast"); t.textContent=m; t.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>t.hidden=true,2800); }
+
+/* =============================== estado =============================== */
+let st = Object.assign({}, DEF);
+let perfil = {of:"LELOIR", nombre:"", tel:""};
+try{ Object.assign(perfil, JSON.parse(store.get("kwAlq.perfil")||"{}")); }catch(e){}   // mismo perfil que la calculadora de alquileres
+let ajustes = {}; try{ ajustes = JSON.parse(store.get("kwHip.bancos")||"{}"); }catch(e){}
+let COT = {tc:0, uva:0, tcFecha:"", uvaFecha:"", vivo:false};
+let R = null;
+
+function banco(id){ const b = BANCOS.find(x=>x.id===id) || BANCOS[0]; return Object.assign({}, b, ajustes[b.id]||{}); }
+function leerURL(){
+  const q = new URLSearchParams(location.search); if(!q.has("p")) return false;
+  const n = k => num(q.get(k));
+  if(n("p")) st.precio = n("p"); if(n("f")) st.fin = Math.min(80,Math.max(10,n("f")));
+  if([10,15,20,25,30].includes(n("a"))) st.plazo = n("a");
+  if(n("i")) st.ingreso = n("i"); if(BANCOS.some(b=>b.id===q.get("b"))) st.banco = q.get("b");
+  if(q.has("g")) st.gastos = n("g"); if(n("tc")) st.tc = n("tc"); if(n("u")) st.uva = n("u");
+  ["cliente","prop"].forEach(k=>{ if(q.get(k)) st[k]=q.get(k); });
+  return true;
+}
+function paramsURL(){
+  const q = new URLSearchParams({p:st.precio, f:st.fin, a:st.plazo, b:st.banco, g:String(st.gastos).replace(".",","), tc:Math.round(st.tc), u:String(st.uva).replace(".",",")});
+  if(st.ingreso) q.set("i", st.ingreso);
+  ["cliente","prop"].forEach(k=>{ if(st[k]) q.set(k,st[k]); });
+  return q;
+}
+function linkCompartir(){ return location.origin + location.pathname + "?" + paramsURL().toString(); }
+
+/* =============================== cotizaciones =============================== */
+async function getJSON(url, ms){
+  const ctl = new AbortController(), t = setTimeout(()=>ctl.abort(), ms||15000);
+  try{ const r = await fetch(url,{signal:ctl.signal}); if(!r.ok) throw new Error(r.status); return await r.json(); }
+  finally{ clearTimeout(t); }
+}
+async function ultimo(id){
+  const hoy = iso(new Date()), desde = iso(new Date(Date.now()-20*864e5));
+  const d = await getJSON(`https://api.bcra.gob.ar/estadisticas/v4.0/monetarias/${id}?desde=${desde}&hasta=${hoy}&limit=50`);
+  const f = (d.results[0].detalle||[]).filter(x=>x.fecha<=hoy).sort((a,b)=>a.fecha<b.fecha?1:-1)[0];
+  if(!f) throw new Error("sin dato"); return f;
+}
+async function cargarCotizaciones(){
+  try{
+    const [tc, uva] = await Promise.all([ultimo(5), ultimo(31)]);
+    Object.assign(COT, {tc:tc.valor, tcFecha:tc.fecha, uva:uva.valor, uvaFecha:uva.fecha, vivo:true});
+  }catch(e){
+    try{
+      const j = await getJSON("../alquileres/indices.json?"+Date.now()), hoy = iso(new Date());
+      const last = s => Object.keys(s||{}).filter(k=>k<=hoy).sort().pop();
+      const kt = last(j.dolar), ku = last(j.uva);
+      Object.assign(COT, {tc:kt?j.dolar[kt]:0, tcFecha:kt||"", uva:ku?j.uva[ku]:0, uvaFecha:ku||"", vivo:false});
+    }catch(x){}
+  }
+}
+function pintarStatus(){
+  if(!COT.tc || !COT.uva){ $("status").innerHTML='<span><span class="dot warn"></span>No se pudieron traer el dólar y la UVA: cargalos a mano en “Cotizaciones y gastos”.</span>'; $("detAjustes").open = true; return; }
+  $("status").innerHTML = `<span><span class="dot ${COT.vivo?"ok":"warn"}"></span>${COT.vivo?"Cotizaciones del BCRA":"Cotizaciones de respaldo"}</span>`+
+    `<span>Dólar mayorista $ ${fmtN(COT.tc,2)} (${fmtF(parseISO(COT.tcFecha))})</span><span>UVA $ ${fmtN(COT.uva,2)} (${fmtF(parseISO(COT.uvaFecha))})</span>`;
+}
+
+/* =============================== cálculo =============================== */
+const factor = (tna, meses) => { const r = tna/100/12; return r ? r/(1-Math.pow(1+r,-meses)) : 1/meses; };
+function simular(b){
+  const precio$ = st.precio * st.tc, plazo = Math.min(st.plazo, b.plazo), n = plazo*12, f = factor(b.tna, n);
+  const finEf = Math.min(st.fin, b.fin);
+  let topes = [precio$ * finEf/100], porTope = "";
+  if(b.topeUVA){ topes.push(b.topeUVA * st.uva); }
+  if(b.topePesos){ topes.push(b.topePesos); }
+  let monto = Math.min(...topes);
+  if(monto < precio$*finEf/100 - 1) porTope = "tope del banco";
+  const r = {b, precio$, plazo, n, f, finEf, porTope, gastos$: precio$*st.gastos/100};
+  const calc = m => { const cuota = m*f; return {monto:m, cuota, ingNec: cuota/(b.rci/100), uvas: m/st.uva, cuotaUva: cuota/st.uva}; };
+  Object.assign(r, calc(monto));
+  r.porc = monto/precio$*100;
+  r.propia = precio$ - monto + r.gastos$;
+  if(st.ingreso){
+    const cuotaMax = st.ingreso*b.rci/100, mIng = cuotaMax/f;
+    r.alcanza = st.ingreso >= r.ingNec - 1;
+    r.maxPorIngreso = Math.min(mIng, monto);
+    if(!r.alcanza){ const c = calc(r.maxPorIngreso); r.conIngreso = Object.assign(c, {porc:c.monto/precio$*100, propia: precio$ - c.monto + r.gastos$}); }
+    r.precioMax$ = Math.min(mIng, ...topes.slice(1)) / (finEf/100); // propiedad más cara que puede comprar con este banco
+  }
+  return r;
+}
+function calcularTodo(){
+  if(!st.precio || !st.tc || !st.uva) return null;
+  const todos = BANCOS.map(x=>simular(banco(x.id)));
+  const sel = todos.find(x=>x.b.id===st.banco) || todos[0];
+  const minCuota = Math.min(...todos.map(x=>x.cuota));
+  return {todos, sel, minCuota};
+}
+
+/* =============================== pintar =============================== */
+function pintar(){
+  R = calcularTodo(); const ok = !!R;
+  $("empty").hidden = ok; $("hero").hidden = !ok; $("actions").hidden = !ok; $("compCard").hidden = !ok;
+  $("finOut").textContent = st.fin + " %";
+  const b = banco(st.banco);
+  $("finHint").textContent = st.precio && st.tc ? "Pide "+fmtUSD(st.precio*st.fin/100)+" · pone "+fmtUSD(st.precio*(1-st.fin/100))+" + gastos" : "Qué parte del precio pide al banco.";
+  pintarBancoForm(b);
+  if(!ok) return;
+  const s = R.sel, x = s.conIngreso || s;
+  $("heroTag").textContent = s.conIngreso ? "Cuota con lo que le prestan" : "Cuota inicial";
+  $("heroBanco").textContent = s.b.nombre+" · "+fmtN(s.b.tna,1)+" % TNA · "+s.plazo+" años";
+  $("heroSub").textContent = "Crédito de "+fmt$(x.monto)+" ("+fmtUSD(x.monto/st.tc)+" · "+fmtN(x.porc,0)+" % del precio)";
+  $("heroCuota").textContent = fmt$(x.cuota);
+  $("heroUva").textContent = fmtN(x.cuotaUva,2)+" UVA por mes · se ajusta con la inflación";
+  const v = $("verdict");
+  if(!st.ingreso){ v.hidden = true; }
+  else if(s.alcanza){ v.hidden=false; v.className="verdict ok"; v.innerHTML = `<b>Le alcanza.</b> Con ${fmt$(st.ingreso)} de ingreso, ${s.b.nombre} le pide ${fmt$(s.ingNec)}. Le sobra margen para una cuota de hasta ${fmt$(st.ingreso*s.b.rci/100)}.`; }
+  else { v.hidden=false; v.className="verdict no";
+    const falta = s.ingNec - st.ingreso;
+    v.innerHTML = `<b>Con este ingreso no llega al ${fmtN(s.finEf,0)} %.</b> Para ${fmt$(s.monto)} le piden ${fmt$(s.ingNec)} (le faltan ${fmt$(falta)} por mes). Con ${fmt$(st.ingreso)} le prestan hasta <b>${fmt$(s.maxPorIngreso)}</b> (${fmtUSD(s.maxPorIngreso/st.tc)}), y tendría que poner ${fmtUSD(s.conIngreso.propia/st.tc)} de su bolsillo. Con este banco podría ir a una propiedad de hasta <b>${fmtUSD(s.precioMax$/st.tc)}</b>.`; }
+  const k = [
+    ["Ingreso que piden", fmt$(x.ingNec), "cuota = "+fmtN(s.b.rci,0)+" % del ingreso"],
+    ["Plata propia", fmtUSD(x.propia/st.tc), "anticipo + "+fmtN(st.gastos,1)+" % de gastos"],
+    ["Crédito en UVA", fmtN(x.uvas,0)+" UVA", fmtN(s.n,0)+" cuotas"],
+    ["Total a devolver", fmtN(x.cuotaUva*s.n,0)+" UVA", "hoy serían "+fmtM(x.cuotaUva*s.n*st.uva)]
+  ];
+  $("kpis").innerHTML = k.map(([a,b,c])=>`<div class="kpi"><small>${a}</small><b>${b}</b><span>${c}</span></div>`).join("");
+  $("tbody").innerHTML = R.todos.map(t=>{
+    const best = Math.abs(t.cuota - R.minCuota) < 1;
+    const est = !st.ingreso ? (best?'<span class="pill best">Cuota más baja</span>':"") : t.alcanza ? '<span class="pill ok">Le alcanza</span>' : '<span class="pill no">No llega</span>';
+    return `<tr data-id="${t.b.id}" class="${t.b.id===st.banco?"on":""}"><td><b>${esc(t.b.nombre)}</b>${t.porTope?`<div class="muted">${fmtN(t.porc,0)} % por tope</div>`:t.finEf<st.fin?`<div class="muted">financia hasta ${t.finEf} %</div>`:""}</td>`+
+      `<td class="r">${fmtN(t.b.tna,1)} %</td><td class="r hide-s">${t.plazo} años${t.plazo<st.plazo?"*":""}</td><td class="r hide-s">${fmtM(t.monto)}</td><td class="r amt">${fmt$(t.cuota)}</td><td class="r">${fmt$(t.ingNec)}</td><td class="hide-s">${est}</td></tr>`;
+  }).join("");
+  $("relevado").textContent = "Condiciones relevadas el "+RELEVADO+" en notas de Ámbito y El Litoral; cambian seguido, así que confirmalas con el banco antes de pasarlas como firmes."+(R.todos.some(t=>t.plazo<st.plazo)?" * Plazo máximo de ese banco.":"");
+  history.replaceState(null,"",location.pathname+"?"+paramsURL().toString());
+}
+function pintarBancoForm(b){
+  $("bancoNota").textContent = b.nota + (ajustes[b.id] ? " (con cambios tuyos)" : "");
+  if(document.activeElement && document.activeElement.closest && document.activeElement.closest("#detBanco")) return;
+  $("bTna").value = fmtN(b.tna, b.tna%1?1:0).replace(/\./g,""); $("bPlazo").value = b.plazo; $("bFin").value = b.fin; $("bRci").value = b.rci;
+}
+$("tbody").addEventListener("click", e=>{ const tr=e.target.closest("tr"); if(!tr) return; st.banco=tr.dataset.id; $("banco").value=st.banco; pintar(); window.scrollTo({top:$("hero").offsetTop-12,behavior:"smooth"}); });
+
+/* =============================== controles =============================== */
+$("banco").innerHTML = BANCOS.map(b=>`<option value="${b.id}">${esc(b.nombre)}</option>`).join("");
+function seg(id, get, set){
+  const g = $(id), sync = ()=>g.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.v===String(get()))));
+  g.onclick = e=>{ const b=e.target.closest("button"); if(!b) return; set(b.dataset.v); sync(); pintar(); };
+  sync(); return sync;
+}
+const syncs = [ seg("plazoSeg", ()=>st.plazo, v=>{st.plazo=+v}), seg("ofSeg", ()=>perfil.of, v=>{perfil.of=v; guardarPerfil()}) ];
+function moneyInput(id, key){
+  $(id).addEventListener("input", e=>{
+    const raw = e.target.value.replace(/\D/g,"").slice(0,13); st[key] = +raw || 0;
+    const pos = e.target.value.length - e.target.selectionStart;
+    e.target.value = st[key] ? st[key].toLocaleString("es-AR") : "";
+    const np = Math.max(0, e.target.value.length - pos); try{ e.target.setSelectionRange(np,np); }catch(x){}
+    pintar();
+  });
+}
+moneyInput("precio","precio"); moneyInput("ingreso","ingreso");
+$("fin").addEventListener("input", e=>{ st.fin = +e.target.value; pintar(); });
+$("banco").addEventListener("change", e=>{ st.banco = e.target.value; pintar(); });
+[["tc","tc"],["uva","uva"],["gastos","gastos"]].forEach(([id,k])=>$(id).addEventListener("input", e=>{ st[k] = num(e.target.value); pintar(); }));
+$("cotizBtn").onclick = ()=>{ st.tc = COT.tc; st.uva = COT.uva; syncInputs(); pintar(); toast("Cotizaciones del BCRA"); };
+[["bTna","tna"],["bPlazo","plazo"],["bFin","fin"],["bRci","rci"]].forEach(([id,k])=>$(id).addEventListener("input", e=>{
+  const v = num(e.target.value); if(!v) return; ajustes[st.banco] = Object.assign({}, ajustes[st.banco]||{}, {[k]:v});
+  store.set("kwHip.bancos", JSON.stringify(ajustes)); pintar();
+}));
+$("bResetBtn").onclick = ()=>{ delete ajustes[st.banco]; store.set("kwHip.bancos", JSON.stringify(ajustes)); pintarBancoForm(banco(st.banco)); pintar(); toast("Condiciones relevadas de "+banco(st.banco).nombre); };
+["cliente","prop"].forEach(k=>$(k).addEventListener("input", e=>{ st[k]=e.target.value.trim(); clearTimeout(pintar.t); pintar.t=setTimeout(pintar,300); }));
+function guardarPerfil(){ store.set("kwAlq.perfil", JSON.stringify(perfil)); }
+$("agNombre").addEventListener("input", e=>{ perfil.nombre=e.target.value.trim(); guardarPerfil(); });
+$("agTel").addEventListener("input", e=>{ perfil.tel=e.target.value.trim(); guardarPerfil(); });
+$("nuevoBtn").onclick = ()=>{ st = Object.assign({}, DEF, {tc:COT.tc, uva:COT.uva}); syncInputs(); pintar(); $("precio").focus(); };
+function syncInputs(){
+  $("precio").value = st.precio ? st.precio.toLocaleString("es-AR") : "";
+  $("ingreso").value = st.ingreso ? st.ingreso.toLocaleString("es-AR") : "";
+  $("fin").value = st.fin; $("banco").value = st.banco;
+  $("tc").value = st.tc ? fmtN(st.tc,2) : ""; $("uva").value = st.uva ? fmtN(st.uva,2) : ""; $("gastos").value = fmtN(st.gastos, st.gastos%1?1:0);
+  $("cliente").value = st.cliente; $("prop").value = st.prop;
+  $("agNombre").value = perfil.nombre; $("agTel").value = perfil.tel;
+  syncs.forEach(s=>s());
+  if(st.cliente||st.prop) $("detProp").open = true;
+}
+
+/* =============================== textos =============================== */
+function textoMensaje(){
+  const s = R.sel, x = s.conIngreso || s, o = OF[perfil.of], L = [];
+  L.push("*Simulación de crédito hipotecario UVA*");
+  if(st.cliente) L.push("Para: "+st.cliente);
+  if(st.prop) L.push("Propiedad: "+st.prop);
+  L.push("Precio: "+fmtUSD(st.precio)+" ("+fmt$(s.precio$)+")");
+  L.push("Banco: "+s.b.nombre+" · "+fmtN(s.b.tna,1)+" % TNA + UVA · "+s.plazo+" años");
+  L.push("");
+  L.push("Crédito: "+fmt$(x.monto)+" ("+fmtUSD(x.monto/st.tc)+", "+fmtN(x.porc,0)+" %)");
+  L.push("*Cuota inicial: "+fmt$(x.cuota)+"* ("+fmtN(x.cuotaUva,2)+" UVA)");
+  L.push("Ingreso que pide el banco: "+fmt$(x.ingNec));
+  L.push("Plata propia: "+fmtUSD(x.propia/st.tc)+" (anticipo + gastos)");
+  if(st.ingreso && !s.alcanza) L.push("Con un ingreso de "+fmt$(st.ingreso)+" el máximo que le prestan es "+fmt$(s.maxPorIngreso)+".");
+  const otros = R.todos.filter(t=>t.b.id!==s.b.id).sort((a,b)=>a.cuota-b.cuota).slice(0,3);
+  if(otros.length){ L.push(""); L.push("Otras opciones (mismo crédito):"); otros.forEach(t=>L.push("• "+t.b.nombre+": cuota "+fmt$(t.cuota)+" · "+fmtN(t.b.tna,1)+" % · "+t.plazo+" años")); }
+  L.push(""); L.push("_Simulación orientativa. La cuota se ajusta por UVA y no incluye seguros. Sujeto a aprobación del banco._");
+  L.push(""); L.push(perfil.nombre ? perfil.nombre+" · "+o.nombre+(perfil.tel?" · "+perfil.tel:"") : o.nombre);
+  return L.join("\n");
+}
+function nombreArchivo(ext){
+  const base = (st.cliente||st.prop) ? (st.cliente||st.prop).replace(/[^\wáéíóúñÁÉÍÓÚÑ ]+/g,"").trim().replace(/\s+/g,"-").slice(0,40)+"_" : "";
+  return base+"credito-UVA_"+R.sel.b.id+"_US"+Math.round(st.precio)+"."+ext;
+}
+
+/* =============================== imágenes =============================== */
+const LOGO = {};
+function cargarLogo(k){ if(LOGO[k]) return LOGO[k]; return LOGO[k] = new Promise(r=>{ const i=new Image(); i.onload=()=>r(i); i.onerror=()=>r(null); i.src="../alquileres/logos/"+k+".png"; }); }
+const fuentes = ()=> document.fonts ? Promise.all(["700 60px 'Barlow Semi Condensed'","600 30px 'Barlow Semi Condensed'","400 28px Barlow","600 28px Barlow","700 28px Barlow"].map(f=>document.fonts.load(f))).catch(()=>{}) : Promise.resolve();
+const F = (w,s,fam)=> `${w} ${s}px ${fam==="d"?"'Barlow Semi Condensed','Arial Narrow'":"Barlow"}, Arial, sans-serif`;
+function rr(x,a,b,w,h,r){ x.beginPath(); x.moveTo(a+r,b); x.arcTo(a+w,b,a+w,b+h,r); x.arcTo(a+w,b+h,a,b+h,r); x.arcTo(a,b+h,a,b,r); x.arcTo(a,b,a+w,b,r); x.closePath(); }
+function txt(x,t,px,py,font,col,align,max){ x.font=font; x.fillStyle=col; x.textAlign=align||"left"; let s=String(t); if(max){ while(x.measureText(s).width>max && s.length>3) s=s.slice(0,-2)+"…"; } x.fillText(s,px,py); }
+function wrap(x,t,px,py,font,col,max,lh){ x.font=font; x.fillStyle=col; x.textAlign="left"; const w=String(t).split(" "); let line="", y=py; for(const word of w){ const tst=line?line+" "+word:word; if(x.measureText(tst).width>max && line){ x.fillText(line,px,y); line=word; y+=lh; } else line=tst; } if(line){ x.fillText(line,px,y); y+=lh; } return y; }
+const ROJO="#b40f1e", TINTA="#1d1a19", GRIS="#6c6462", LINEA="#e3dedc", FONDO="#f6f4f3", VERDE="#1e7a46", OCRE="#9c5700";
+
+async function placa(){
+  await fuentes(); const logo = await cargarLogo(perfil.of.toLowerCase()+"-color");
+  const W=1080, H=1350, M=72, c=document.createElement("canvas"); c.width=W; c.height=H; const x=c.getContext("2d");
+  const s = R.sel, v = s.conIngreso || s, o = OF[perfil.of];
+  x.fillStyle="#fff"; x.fillRect(0,0,W,H);
+  if(logo){ const lh=118, lw=lh*logo.naturalWidth/logo.naturalHeight; x.drawImage(logo,M-6,56,lw,lh); }
+  txt(x,"CRÉDITO",1008,108,F(700,34,"d"),ROJO,"right"); txt(x,"HIPOTECARIO UVA",1008,146,F(700,34,"d"),ROJO,"right");
+  x.fillStyle=ROJO; x.fillRect(0,214,W,10);
+  let y = 300;
+  txt(x,(st.prop||"Propiedad")+" · "+fmtUSD(st.precio),M,y,F(700,44,"d"),TINTA,"left",W-2*M); y+=48;
+  if(st.cliente){ txt(x,"Para "+st.cliente,M,y,F(500,26),GRIS,"left",W-2*M); y+=40; }
+  txt(x,(s.b.nombre+" · "+fmtN(s.b.tna,1)+" % TNA + UVA · "+s.plazo+" años").toUpperCase(),M,y+6,F(700,24,"d"),GRIS,"left",W-2*M);
+  y += 70;
+  rr(x,M,y,W-2*M,300,26); x.fillStyle=FONDO; x.fill();
+  txt(x,"CUOTA INICIAL",M+40,y+64,F(700,28,"d"),GRIS);
+  txt(x,fmt$(v.cuota),M+36,y+190,F(700,138,"d"),TINTA,"left",W-2*M-80);
+  txt(x,fmtN(v.cuotaUva,2)+" UVA por mes · se ajusta con la inflación",M+40,y+250,F(500,28),GRIS,"left",W-2*M-80);
+  y += 300+32;
+  const k = [["Crédito",fmt$(v.monto),fmtUSD(v.monto/st.tc)+" · "+fmtN(v.porc,0)+" % del precio"],["Ingreso que piden",fmt$(v.ingNec),"cuota = "+fmtN(s.b.rci,0)+" % del ingreso"],
+             ["Plata propia",fmtUSD(v.propia/st.tc),"anticipo + "+fmtN(st.gastos,1)+" % de gastos"],["Cuotas",fmtN(s.n,0),"sistema francés en UVA"]];
+  k.forEach(([a,b2,c2],j)=>{ const cx = M + (j%2)*((W-2*M)/2+10), cy = y + Math.floor(j/2)*134, w=(W-2*M)/2-10;
+    rr(x,cx,cy,w,120,18); x.fillStyle=FONDO; x.fill();
+    txt(x,a.toUpperCase(),cx+26,cy+36,F(700,22,"d"),GRIS); txt(x,b2,cx+24,cy+82,F(700,44,"d"),TINTA,"left",w-40); txt(x,c2,cx+26,cy+108,F(500,20),GRIS,"left",w-40); });
+  y += 268 + 44;
+  if(st.ingreso){ const col = s.alcanza?VERDE:OCRE;
+    txt(x, s.alcanza ? "✓ Con "+fmt$(st.ingreso)+" de ingreso, le alcanza" : "Con "+fmt$(st.ingreso)+" le prestan hasta "+fmt$(s.maxPorIngreso), M, y+10, F(700,28), col, "left", W-2*M); }
+  const fy = H-150; x.fillStyle=LINEA; x.fillRect(M,fy-36,W-2*M,2);
+  txt(x,(perfil.nombre||o.nombre)+(perfil.tel?"  ·  "+perfil.tel:""),M,fy,F(700,30),TINTA,"left",W-2*M);
+  txt(x,"Corredor interviniente: "+o.corredor+" · "+o.mat,M,fy+40,F(500,22),GRIS,"left",W-2*M);
+  txt(x,"Simulación orientativa, sujeta a aprobación del banco. "+LEYENDA+".",M,fy+72,F(400,20),GRIS,"left",W-2*M);
+  return c;
+}
+
+async function informePaginas(){
+  await fuentes(); const logo = await cargarLogo(perfil.of.toLowerCase()+"-color");
+  const W=1240, H=1754, M=90, o=OF[perfil.of], pags=[], hoy=new Date(), s=R.sel, v=s.conIngreso||s;
+  const nueva = ()=>{ const c=document.createElement("canvas"); c.width=W; c.height=H; const x=c.getContext("2d"); x.fillStyle="#fff"; x.fillRect(0,0,W,H);
+    if(logo){ const lh=96, lw=lh*logo.naturalWidth/logo.naturalHeight; x.drawImage(logo,M-6,60,lw,lh); }
+    txt(x,"SIMULACIÓN DE CRÉDITO HIPOTECARIO UVA",W-M,104,F(700,32,"d"),ROJO,"right"); txt(x,"Emitida el "+fmtF(hoy),W-M,140,F(500,22),GRIS,"right");
+    x.fillStyle=ROJO; x.fillRect(M,180,W-2*M,4); pags.push(c); return x; };
+  let x = nueva(), y = 250;
+  const datos = [["Comprador/a",st.cliente||"—"],["Propiedad",st.prop||"—"],["Precio",fmtUSD(st.precio)+" · "+fmt$(s.precio$)],
+    ["Dólar / UVA","$ "+fmtN(st.tc,2)+" por US$ · UVA $ "+fmtN(st.uva,2)],["Ingreso del hogar",st.ingreso?fmt$(st.ingreso)+" por mes":"No informado"],
+    ["Banco elegido",s.b.nombre+" · "+fmtN(s.b.tna,1)+" % TNA + UVA · "+s.plazo+" años · financia hasta "+s.b.fin+" %"]];
+  datos.forEach(([a,b],j)=>{ const yy=y+j*44; txt(x,a,M,yy,F(600,24),GRIS); txt(x,b,M+280,yy,F(500,25),TINTA,"left",W-2*M-280); });
+  y += datos.length*44 + 30;
+  rr(x,M,y,W-2*M,200,20); x.fillStyle=FONDO; x.fill();
+  txt(x,"Cuota inicial",M+34,y+56,F(600,26),GRIS);
+  txt(x,fmt$(v.cuota),M+30,y+140,F(700,84,"d"),TINTA);
+  txt(x,fmtN(v.cuotaUva,2)+" UVA por mes",M+34,y+180,F(500,22),GRIS);
+  const kk=[["Crédito",fmt$(v.monto)+" ("+fmtN(v.porc,0)+" %)"],["Ingreso que piden",fmt$(v.ingNec)],["Plata propia",fmtUSD(v.propia/st.tc)]];
+  kk.forEach(([a,b],j)=>{ txt(x,a,W-M-34,y+52+j*52,F(500,20),GRIS,"right"); txt(x,b,W-M-34,y+78+j*52,F(700,26),TINTA,"right"); });
+  y += 200 + 40;
+  if(st.ingreso){ const msg = s.alcanza ? "Con el ingreso informado le alcanza para este crédito." : "Con el ingreso informado le prestan hasta "+fmt$(s.maxPorIngreso)+" ("+fmtUSD(s.maxPorIngreso/st.tc)+"). Con este banco podría ir a una propiedad de hasta "+fmtUSD(s.precioMax$/st.tc)+".";
+    y = wrap(x,msg,M,y,F(600,24),s.alcanza?VERDE:OCRE,W-2*M,34) + 20; }
+  txt(x,"COMPARATIVO DE BANCOS",M,y+10,F(700,22,"d"),GRIS); y += 50;
+  const cols=[[M,"Banco","left"],[M+330,"Tasa","right"],[M+470,"Plazo","right"],[M+700,"Crédito","right"],[M+880,"Cuota inicial","right"],[W-M,"Ingreso pedido","right"]];
+  cols.forEach(([cx,t,al])=>txt(x,t.toUpperCase(),cx,y,F(700,19,"d"),GRIS,al)); y+=14; x.fillStyle=LINEA; x.fillRect(M,y,W-2*M,2); y+=40;
+  R.todos.forEach(t=>{
+    if(t.b.id===s.b.id){ x.fillStyle="#f7e3e5"; x.fillRect(M-10,y-30,W-2*M+20,44); }
+    txt(x,t.b.nombre,cols[0][0],y,F(t.b.id===s.b.id?700:500,22),TINTA); txt(x,fmtN(t.b.tna,1)+" %",cols[1][0],y,F(500,22),TINTA,"right");
+    txt(x,t.plazo+" años",cols[2][0],y,F(500,22),TINTA,"right"); txt(x,fmtM(t.monto),cols[3][0],y,F(500,22),TINTA,"right");
+    txt(x,fmt$(t.cuota),cols[4][0],y,F(700,22),TINTA,"right"); txt(x,fmt$(t.ingNec),cols[5][0],y,F(500,22),TINTA,"right"); y+=44; });
+  y += 16; wrap(x,"Condiciones relevadas el "+RELEVADO+" en publicaciones periodísticas (Ámbito, El Litoral); pueden cambiar sin aviso. Para comparar, todos los bancos usan la misma financiación y el mismo plazo, o el máximo que ofrece cada uno.",M,y,F(400,19),GRIS,W-2*M,26);
+  pags.forEach((c,n)=>{ const x=c.getContext("2d"), fy=H-160;
+    x.fillStyle=LINEA; x.fillRect(M,fy-30,W-2*M,2);
+    txt(x,(perfil.nombre?perfil.nombre+" · ":"")+o.nombre+(perfil.tel?" · "+perfil.tel:""),M,fy,F(700,24),TINTA,"left",W-2*M);
+    txt(x,"Corredor interviniente: "+o.corredor+" · "+o.mat+". "+LEYENDA+".",M,fy+34,F(400,19),GRIS,"left",W-2*M);
+    wrap(x,"Simulación orientativa con sistema francés en UVA. La cuota en pesos se ajusta mensualmente por UVA y no incluye seguros de vida e incendio ni gastos de otorgamiento. La aprobación, la tasa y el monto finales dependen de la evaluación de cada banco.",M,fy+64,F(400,19),GRIS,W-2*M,26);
+  });
+  return pags;
+}
+const blobDe = (c,tipo,q)=> new Promise(r=>c.toBlob(r,tipo||"image/png",q));
+function bajar(nombre, blob){
+  const url=URL.createObjectURL(blob), a=document.createElement("a"); a.href=url; a.download=nombre;
+  document.body.append(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),8000); toast("Descargando "+nombre);
+}
+function script(src){ return new Promise((ok,ko)=>{ if(document.querySelector(`script[src="${src}"]`)) return ok(); const s=document.createElement("script"); s.src=src; s.onload=ok; s.onerror=ko; document.head.append(s); }); }
+async function ocupado(btn, fn){ const t=btn.innerHTML; btn.disabled=true; try{ await fn(); } catch(e){ console.error(e); toast("No salió: "+(e.message||e)); } finally{ btn.disabled=false; btn.innerHTML=t; } }
+
+/* =============================== acciones =============================== */
+$("waBtn").onclick = ()=>{ window.open("https://wa.me/?text="+encodeURIComponent(textoMensaje()),"_blank","noopener"); };
+$("imgBtn").onclick = e=> ocupado(e.currentTarget, async()=>{ bajar(nombreArchivo("png"), await blobDe(await placa())); });
+$("pdfBtn").onclick = e=> ocupado(e.currentTarget, async()=>{
+  await script("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+  const pags = await informePaginas(), doc = new window.jspdf.jsPDF({unit:"mm", format:"a4"});
+  pags.forEach((c,n)=>{ if(n) doc.addPage(); doc.addImage(c.toDataURL("image/jpeg",.92),"JPEG",0,0,210,297); });
+  doc.setProperties({title:"Simulación de crédito hipotecario UVA", author: perfil.nombre || OF[perfil.of].nombre});
+  bajar(nombreArchivo("pdf"), doc.output("blob"));
+});
+$("xlsBtn").onclick = e=> ocupado(e.currentTarget, async()=>{
+  await script("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js");
+  const X = window.XLSX, s = R.sel, v = s.conIngreso || s, o = OF[perfil.of], wb = X.utils.book_new();
+  const fmtCells = (ws, map) => { Object.entries(map).forEach(([ref,z])=>{ if(ws[ref]) ws[ref].z = z; }); };
+  // Resumen
+  const res = [["Simulación de crédito hipotecario UVA"],[],["Comprador/a",st.cliente],["Propiedad",st.prop],["Precio (US$)",st.precio],["Dólar ($ por US$)",st.tc],["Precio ($)",s.precio$],["Valor UVA ($)",st.uva],
+    ["Ingreso del hogar ($)",st.ingreso||null],["Gastos de compra (%)",st.gastos/100],[],["Banco",s.b.nombre],["TNA",s.b.tna/100],["Plazo (años)",s.plazo],["Relación cuota/ingreso",s.b.rci/100],[],
+    ["Crédito ($)",v.monto],["Crédito (UVA)",v.uvas],["% del precio",v.porc/100],["Cuota inicial ($)",v.cuota],["Cuota (UVA)",v.cuotaUva],["Ingreso que piden ($)",v.ingNec],["Plata propia (US$)",v.propia/st.tc],
+    [],["Emitida",fmtF(new Date())],["Por",(perfil.nombre?perfil.nombre+" · ":"")+o.nombre+(perfil.tel?" · "+perfil.tel:"")],["Corredor interviniente",o.corredor+" · "+o.mat],
+    ["Aclaración","Simulación orientativa. Sistema francés en UVA; la cuota en pesos se ajusta por UVA y no incluye seguros. Sujeta a aprobación del banco. Condiciones relevadas el "+RELEVADO+"."]];
+  const w1 = X.utils.aoa_to_sheet(res); w1["!cols"]=[{wch:26},{wch:60}];
+  fmtCells(w1,{B5:'"US$" #,##0',B6:'#,##0.00',B7:'"$" #,##0',B8:'#,##0.00',B9:'"$" #,##0',B10:'0.0%',B13:'0.00%',B15:'0%',B17:'"$" #,##0',B18:'#,##0',B19:'0%',B20:'"$" #,##0',B21:'#,##0.00',B22:'"$" #,##0',B23:'"US$" #,##0'});
+  X.utils.book_append_sheet(wb, w1, "Resumen");
+  // Comparativo
+  const comp = [["Banco","TNA","Plazo (años)","Financia hasta","Crédito ($)","Cuota inicial ($)","Cuota (UVA)","Ingreso que piden ($)","Plata propia (US$)","Nota"]];
+  R.todos.forEach(t=>comp.push([t.b.nombre,t.b.tna/100,t.plazo,t.finEf/100,t.monto,t.cuota,t.cuotaUva,t.ingNec,t.propia/st.tc,t.b.nota]));
+  const w2 = X.utils.aoa_to_sheet(comp); w2["!cols"]=[{wch:18},{wch:7},{wch:11},{wch:13},{wch:15},{wch:15},{wch:11},{wch:19},{wch:17},{wch:60}];
+  for(let r=1;r<comp.length;r++){ const c=(col)=>X.utils.encode_cell({r,c:col}); [[1,"0.00%"],[3,"0%"],[4,'"$" #,##0'],[5,'"$" #,##0'],[6,"#,##0.00"],[7,'"$" #,##0'],[8,'"US$" #,##0']].forEach(([col,z])=>{ if(w2[c(col)]) w2[c(col)].z=z; }); }
+  X.utils.book_append_sheet(wb, w2, "Comparativo");
+  // Cuadro de marcha en UVA
+  const r = s.b.tna/100/12, am = [["Cuota","Cuota (UVA)","Interés (UVA)","Capital (UVA)","Saldo (UVA)","Cuota a valor UVA de hoy ($)"]];
+  let saldo = v.uvas;
+  for(let i=1;i<=s.n;i++){ const int = saldo*r, cap = v.cuotaUva-int; saldo = Math.max(0, saldo-cap); am.push([i, v.cuotaUva, int, cap, saldo, v.cuotaUva*st.uva]); }
+  const w3 = X.utils.aoa_to_sheet(am); w3["!cols"]=[{wch:7},{wch:13},{wch:13},{wch:13},{wch:14},{wch:26}];
+  for(let i=1;i<am.length;i++){ for(let col=1;col<=4;col++){ const ref=X.utils.encode_cell({r:i,c:col}); w3[ref].z="#,##0.00"; } w3[X.utils.encode_cell({r:i,c:5})].z='"$" #,##0'; }
+  X.utils.book_append_sheet(wb, w3, "Cuotas en UVA");
+  bajar(nombreArchivo("xlsx"), new Blob([X.write(wb,{bookType:"xlsx",type:"array"})],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));
+});
+async function copiar(t, ok){
+  try{ await navigator.clipboard.writeText(t); toast(ok); }
+  catch(e){ const a=document.createElement("textarea"); a.value=t; document.body.append(a); a.select(); try{ document.execCommand("copy"); toast(ok); }catch(x){ toast("No se pudo copiar"); } a.remove(); }
+}
+$("copyBtn").onclick = ()=> copiar(textoMensaje().replace(/[*_]/g,""), "Texto copiado");
+$("linkBtn").onclick = ()=> copiar(linkCompartir(), "Link copiado: abre esta misma simulación");
+$("shareBtn").onclick = e=> ocupado(e.currentTarget, async()=>{
+  const texto = textoMensaje().replace(/[*_]/g,"");
+  const file = new File([await blobDe(await placa())], nombreArchivo("png"), {type:"image/png"});
+  if(navigator.canShare && navigator.canShare({files:[file]})){ try{ await navigator.share({files:[file], text:texto, title:"Simulación de crédito UVA"}); }catch(x){ if(x.name!=="AbortError") throw x; } }
+  else if(navigator.share){ try{ await navigator.share({text:texto, url:linkCompartir(), title:"Simulación de crédito UVA"}); }catch(x){ if(x.name!=="AbortError") throw x; } }
+  else { bajar(file.name, file); }
+});
+
+/* =============================== guardados =============================== */
+const leerGuardados = ()=>{ try{ return JSON.parse(store.get("kwHip.sims")||"[]"); }catch(e){ return []; } };
+function pintarGuardados(){
+  const L = leerGuardados(); $("savedCard").hidden = !L.length;
+  $("saved").innerHTML = L.map((g,j)=>`<div class="it"><div><b>${esc(g.nombre)}</b><span>${esc(g.resumen||"")} · ${fmtF(new Date(g.ts))}</span></div>`+
+    `<span class="row"><button type="button" class="btn small" data-a="abrir" data-j="${j}">Abrir</button><button type="button" class="btn ghost small" data-a="borrar" data-j="${j}" aria-label="Borrar ${esc(g.nombre)}">Borrar</button></span></div>`).join("");
+}
+$("saved").onclick = e=>{
+  const b = e.target.closest("button"); if(!b) return; const L = leerGuardados(), g = L[+b.dataset.j]; if(!g) return;
+  if(b.dataset.a==="borrar"){ if(!confirm("¿Borrar “"+g.nombre+"”?")) return; L.splice(+b.dataset.j,1); store.set("kwHip.sims",JSON.stringify(L)); pintarGuardados(); toast("Borrada"); return; }
+  st = Object.assign({}, DEF, g.st); syncInputs(); pintar(); window.scrollTo({top:0,behavior:"smooth"}); toast("Abierta: "+g.nombre);
+};
+$("saveBtn").onclick = ()=>{
+  const sug = st.cliente || st.prop || ("Propiedad "+fmtUSD(st.precio));
+  const nombre = prompt("¿Con qué nombre la guardo?", sug); if(nombre==null) return;
+  const L = leerGuardados(), resumen = fmtUSD(st.precio)+" · "+banco(st.banco).nombre+" · "+st.fin+" % a "+st.plazo+" años";
+  const item = {nombre:nombre.trim()||sug, st:Object.assign({},st), resumen, ts:Date.now()};
+  const k = L.findIndex(g=>g.nombre===item.nombre); if(k>=0) L[k]=item; else L.unshift(item);
+  store.set("kwHip.sims", JSON.stringify(L.slice(0,60))); pintarGuardados(); toast("Guardada en este dispositivo");
+};
+
+/* =============================== arranque =============================== */
+const vinoConLink = leerURL();
+syncInputs(); pintarGuardados(); pintar();
+cargarCotizaciones().finally(()=>{
+  if(!st.tc) st.tc = COT.tc; if(!st.uva) st.uva = COT.uva;
+  syncInputs(); pintarStatus(); pintar();
+  if(vinoConLink && R && window.innerWidth < 960) $("hero").scrollIntoView({behavior:"smooth", block:"start"});
+});
+</script>
+</body>
+</html>

@@ -7,6 +7,7 @@ Fuentes:
   ICL  -> BCRA, variable 40 (diaria)
   CER  -> BCRA, variable 30 (diaria)
   UVA  -> BCRA, variable 31 (diaria)
+  Dólar -> BCRA, variable 5 (tipo de cambio mayorista, Com. A 3500) — lo usa el simulador hipotecario
   IPC  -> INDEC vía datos.gob.ar, serie 148.3_INIVELNAL_DICI_M_26 (mensual, nivel general)
 """
 import json
@@ -15,7 +16,7 @@ import urllib.request
 from datetime import date, datetime, timezone
 
 DESDE = "2019-01-01"
-BCRA = {"icl": 40, "cer": 30, "uva": 31}
+BCRA = {"icl": 40, "cer": 30, "uva": 31, "dolar": 5}
 IPC_SERIE = "148.3_INIVELNAL_DICI_M_26"
 SALIDA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "indices.json")
 
